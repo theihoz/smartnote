@@ -27,9 +27,7 @@ abstract final class NoteValidator {
     if (draft.kind == NoteKind.text &&
         draft.title.trim().isEmpty &&
         draft.body.trim().isEmpty) {
-      return const NoteValidationResult.invalid(
-        NoteValidationError.emptyNote,
-      );
+      return const NoteValidationResult.invalid(NoteValidationError.emptyNote);
     }
 
     return const NoteValidationResult.valid();

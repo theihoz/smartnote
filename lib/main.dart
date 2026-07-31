@@ -1,122 +1,98 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+import 'app/smartnote_app.dart';
+import 'features/notes/data/smartnote_database.dart';
+import 'features/notes/data/sqlite_note_repository.dart';
+import 'features/notes/domain/note.dart';
+import 'features/sync/data/cloud_note_store.dart';
+import 'features/sync/data/outbox_sync_service.dart';
+import 'features/sync/data/supabase_config.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
+  final database = await openSmartNoteDatabase();
+  final repository = SqliteNoteRepository(database);
+  await _seedDemoNotes(repository);
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  final config = SupabaseConfig.fromEnvironment();
+  if (config != null) {
+    try {
+      await Supabase.initialize(
+        url: config.url,
+        publishableKey: config.publishableKey,
+      );
+      final client = Supabase.instance.client;
+      if (client.auth.currentSession == null) {
+        await client.auth.signInAnonymously();
+      }
+      await OutboxSyncService(
+        database: database,
+        notes: repository,
+        cloud: SupabaseCloudNoteStore(client),
+      ).syncPending();
+    } catch (_) {
+      // Local SQLite remains fully functional when cloud is unavailable.
+    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+  runApp(SmartNoteApp(repository: repository));
+}
+
+Future<void> _seedDemoNotes(SqliteNoteRepository repository) async {
+  if ((await repository.list()).isNotEmpty) return;
+  final now = DateTime.now();
+  await repository.save(
+    Note(
+      id: 'demo-dalat',
+      title: 'Lịch trình du lịch Đà Lạt',
+      body:
+          'Lịch trình ngày 1 dự kiến sẽ bắt đầu bằng việc đi ăn bánh mì '
+          'xíu mại Hoàng Diệu ngay sau khi nhận phòng. Buổi chiều ghé '
+          'Cà phê Túi Mơ To để ngắm hoàng hôn.',
+      kind: NoteKind.checklist,
+      checklist: const [
+        ChecklistItem(
+          id: 'demo-item-1',
+          text: 'Đặt vé máy bay / xe khách',
+          isDone: true,
+          position: 0,
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
+        ChecklistItem(
+          id: 'demo-item-2',
+          text: 'Thuê homestay gần trung tâm',
+          isDone: true,
+          position: 1,
+        ),
+        ChecklistItem(
+          id: 'demo-item-3',
+          text: 'Lên danh sách quán ăn ngon',
+          isDone: false,
+          position: 2,
+        ),
+      ],
+      tags: const ['Cá nhân', 'Du lịch'],
+      isFavorite: true,
+      colorKey: 'lavender',
+      imagePaths: const ['assets/images/dalat_food.jpg'],
+      createdAt: now.subtract(const Duration(days: 2)),
+      updatedAt: now,
+    ),
+  );
+  await repository.save(
+    Note(
+      id: 'demo-flutter',
+      title: 'Ôn tập Flutter',
+      body: 'Riverpod, GoRouter, SQLite và Material Design 3.',
+      kind: NoteKind.text,
+      checklist: const [],
+      tags: const ['Học tập'],
+      isFavorite: false,
+      colorKey: 'sage',
+      imagePaths: const [],
+      createdAt: now.subtract(const Duration(days: 4)),
+      updatedAt: now.subtract(const Duration(hours: 3)),
+    ),
+  );
 }

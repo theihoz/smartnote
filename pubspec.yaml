@@ -46,7 +46,6 @@ dependencies:
   image_picker: ^1.2.3
   uuid: ^4.6.0
   supabase_flutter: ^2.16.0
-  google_fonts: ^8.2.0
   intl: ^0.20.2
 
 dev_dependencies:
@@ -73,6 +72,12 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/images/
+  fonts:
+    - family: Outfit
+      fonts:
+        - asset: assets/fonts/Outfit-Variable.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:
