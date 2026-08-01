@@ -9,7 +9,7 @@ assert.match(html, /Tải APK/);
 assert.match(html, /data-apk-url/);
 assert.match(html, /https:\/\/[^"]+\.public\.blob\.vercel-storage\.com\/app-debug\.apk/);
 assert.doesNotMatch(html, /SMARTNOTE_APK_URL/);
-assert.match(html, /931E254919CA123A096C3D4E96F5EA7C08EFEB8FD6FAB8FFF317E6C664EF2529/);
-assert.match(html, /163\.3 MB/);
+assert.match(html, /068303290D8C874B62724B7DFE6F8732EE4FE127982D18E3D5227C4F52B29089/);
+assert.match(html, /202\.2 MB/);
 
 console.log("SmartNote download page contract passed.");

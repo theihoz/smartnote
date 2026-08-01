@@ -20,14 +20,14 @@ flutter pub get
 flutter run
 ```
 
-Ứng dụng vẫn hoạt động đầy đủ bằng SQLite khi không có cấu hình cloud. Để bật
-Supabase, chạy migration trong
-`supabase/migrations/202607310001_create_notes.sql`, bật Anonymous Sign-Ins,
-rồi truyền cấu hình lúc build:
+Ứng dụng vẫn hoạt động đầy đủ bằng SQLite khi không có cấu hình cloud. Project
+Supabase production đã được tạo tại `ijfiountpfumysfbwrqh`, migration và
+Anonymous Sign-Ins đã được bật. Khi chạy hoặc build, truyền publishable key từ
+Supabase Dashboard (không dùng secret/service-role key):
 
 ```powershell
 flutter run `
-  --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co `
+  --dart-define=SUPABASE_URL=https://ijfiountpfumysfbwrqh.supabase.co `
   --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 ```
 
@@ -46,7 +46,7 @@ APK được tạo tại `build/app/outputs/flutter-apk/app-debug.apk`.
 
 - Trang tải production: <https://smartnote-download.vercel.app>
 - APK trực tiếp: <https://ei7nc9vnjb3m9ska.public.blob.vercel-storage.com/app-debug.apk>
-- SHA-256: `931E254919CA123A096C3D4E96F5EA7C08EFEB8FD6FAB8FFF317E6C664EF2529`
+- SHA-256: `068303290D8C874B62724B7DFE6F8732EE4FE127982D18E3D5227C4F52B29089`
 
 Thư mục `download_site` là website tĩnh được triển khai bằng Vercel; APK được
 lưu trong Vercel Blob.

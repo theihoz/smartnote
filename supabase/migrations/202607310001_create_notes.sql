@@ -15,6 +15,9 @@ create table if not exists public.notes (
 
 alter table public.notes enable row level security;
 
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on table public.notes to authenticated;
+
 create policy "users read their own notes"
 on public.notes for select
 to authenticated
