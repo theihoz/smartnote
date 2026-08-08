@@ -6,9 +6,14 @@ import 'package:uuid/uuid.dart';
 import '../features/inspiration/data/quote_api_repository.dart';
 import '../features/notes/application/notes_controller.dart';
 import '../features/notes/domain/note_repository.dart';
+import '../features/settings/data/app_settings_repository.dart';
 
 final noteRepositoryProvider = Provider<NoteRepository>(
   (ref) => throw StateError('noteRepositoryProvider must be overridden'),
+);
+
+final appSettingsStoreProvider = Provider<AppSettingsStore>(
+  (_) => MemoryAppSettingsStore(),
 );
 
 final notesControllerProvider =
@@ -28,5 +33,9 @@ final quoteProvider = FutureProvider<Quote>((ref) async {
   return QuoteApiRepository(client).fetchRandom();
 });
 
-final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
-final localeProvider = StateProvider<Locale>((ref) => const Locale('vi'));
+final themeModeProvider = StateProvider<ThemeMode>(
+  (ref) => ref.watch(appSettingsStoreProvider).loadThemeMode(),
+);
+final localeProvider = StateProvider<Locale>(
+  (ref) => ref.watch(appSettingsStoreProvider).loadLocale(),
+);

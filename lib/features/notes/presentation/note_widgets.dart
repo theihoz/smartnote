@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/app_theme.dart';
+import '../../../l10n/app_localizations.dart';
 import '../domain/note.dart';
 
 class NoteCard extends StatelessWidget {
@@ -14,6 +15,7 @@ class NoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -35,7 +37,7 @@ class NoteCard extends StatelessWidget {
                 const SizedBox(height: 12),
               ],
               Text(
-                note.title.isEmpty ? 'Ghi chú không tiêu đề' : note.title,
+                note.title.isEmpty ? l10n.untitled : note.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(
@@ -87,14 +89,14 @@ class NoteCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      _relativeDate(note.updatedAt),
+                      _relativeDate(context, note.updatedAt),
                       style: Theme.of(
                         context,
                       ).textTheme.labelSmall?.copyWith(color: AppTheme.muted),
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Yêu thích',
+                    tooltip: l10n.favorite,
                     visualDensity: VisualDensity.compact,
                     onPressed: onFavorite,
                     icon: Icon(
@@ -122,6 +124,7 @@ class _ChecklistPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -156,7 +159,10 @@ class _ChecklistPreview extends StatelessWidget {
             ),
           ),
         Text(
-          '${note.completedChecklistItems}/${note.checklist.length} hoàn thành',
+          l10n.completedCount(
+            note.completedChecklistItems,
+            note.checklist.length,
+          ),
           style: const TextStyle(
             color: AppTheme.indigo,
             fontSize: 11,
@@ -189,9 +195,10 @@ class _NoteImage extends StatelessWidget {
   }
 }
 
-String _relativeDate(DateTime date) {
+String _relativeDate(BuildContext context, DateTime date) {
+  final l10n = AppLocalizations.of(context);
   final difference = DateTime.now().difference(date);
-  if (difference.inDays <= 0) return 'Hôm nay';
-  if (difference.inDays == 1) return 'Hôm qua';
-  return '${difference.inDays} ngày trước';
+  if (difference.inDays <= 0) return l10n.today;
+  if (difference.inDays == 1) return l10n.yesterday;
+  return l10n.daysAgo(difference.inDays);
 }

@@ -43,6 +43,14 @@ class NotesController extends StateNotifier<NotesState> {
   final NoteRepository _repository;
   final DateTime Function() _now;
   final String Function() _newId;
+  UndoEntry? _undoEntry;
+
+  bool get canUndo => _undoEntry != null && !_isUndoExpired;
+
+  bool get _isUndoExpired {
+    final entry = _undoEntry;
+    return entry == null || !_now().isBefore(entry.expiresAt);
+  }
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -69,6 +77,7 @@ class NotesController extends StateNotifier<NotesState> {
     if (!validation.isValid) return validation;
 
     final timestamp = _now();
+    final previous = id == null ? null : await _repository.getById(id);
     final note = Note(
       id: id ?? _newId(),
       title: draft.title.trim(),
@@ -85,6 +94,12 @@ class NotesController extends StateNotifier<NotesState> {
       updatedAt: timestamp,
     );
     await _repository.save(note);
+    _undoEntry = UndoEntry(
+      noteId: note.id,
+      previous: previous,
+      created: previous == null,
+      expiresAt: timestamp.add(const Duration(seconds: 5)),
+    );
     await load();
     return validation;
   }
@@ -102,12 +117,49 @@ class NotesController extends StateNotifier<NotesState> {
     final note = await _repository.getById(id);
     if (note == null) return null;
     await _repository.delete(id);
+    _undoEntry = UndoEntry(
+      noteId: note.id,
+      previous: note,
+      created: false,
+      expiresAt: _now().add(const Duration(seconds: 5)),
+    );
     await load();
     return note;
+  }
+
+  Future<bool> undo() async {
+    final entry = _undoEntry;
+    if (entry == null || _isUndoExpired) {
+      _undoEntry = null;
+      return false;
+    }
+
+    if (entry.created) {
+      await _repository.delete(entry.noteId);
+    } else if (entry.previous != null) {
+      await _repository.save(entry.previous!);
+    }
+    _undoEntry = null;
+    await load();
+    return true;
   }
 
   Future<void> restore(Note note) async {
     await _repository.save(note);
     await load();
   }
+}
+
+class UndoEntry {
+  const UndoEntry({
+    required this.noteId,
+    required this.previous,
+    required this.created,
+    required this.expiresAt,
+  });
+
+  final String noteId;
+  final Note? previous;
+  final bool created;
+  final DateTime expiresAt;
 }

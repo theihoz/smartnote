@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
 
 import '../../../app/providers.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../sync/data/supabase_config.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -11,6 +13,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(localeProvider);
+    final l10n = AppLocalizations.of(context);
     final supabaseEnabled = SupabaseConfig.fromEnvironment() != null;
 
     return SafeArea(
@@ -18,46 +21,51 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(18),
         children: [
           Text(
-            'Cài đặt',
+            l10n.settings,
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 20),
           _Section(
-            title: 'Giao diện',
+            title: l10n.themeSection,
             children: [
               ListTile(
                 leading: const Icon(Icons.brightness_6_outlined),
-                title: const Text('Chế độ màu'),
+                title: Text(l10n.themeMode),
                 subtitle: Text(switch (themeMode) {
-                  ThemeMode.light => 'Sáng',
-                  ThemeMode.dark => 'Tối',
-                  _ => 'Theo hệ thống',
+                  ThemeMode.light => l10n.light,
+                  ThemeMode.dark => l10n.dark,
+                  _ => l10n.system,
                 }),
                 trailing: DropdownButton<ThemeMode>(
                   value: themeMode,
                   onChanged: (value) {
                     if (value != null) {
                       ref.read(themeModeProvider.notifier).state = value;
+                      unawaited(
+                        ref
+                            .read(appSettingsStoreProvider)
+                            .saveThemeMode(value),
+                      );
                     }
                   },
-                  items: const [
+                  items: [
                     DropdownMenuItem(
                       value: ThemeMode.system,
-                      child: Text('Hệ thống'),
+                      child: Text(l10n.system),
                     ),
                     DropdownMenuItem(
                       value: ThemeMode.light,
-                      child: Text('Sáng'),
+                      child: Text(l10n.light),
                     ),
-                    DropdownMenuItem(value: ThemeMode.dark, child: Text('Tối')),
+                    DropdownMenuItem(value: ThemeMode.dark, child: Text(l10n.dark)),
                   ],
                 ),
               ),
               ListTile(
                 leading: const Icon(Icons.language_rounded),
-                title: const Text('Ngôn ngữ'),
+                title: Text(l10n.language),
                 trailing: SegmentedButton<String>(
                   segments: const [
                     ButtonSegment(value: 'vi', label: Text('VI')),
@@ -68,6 +76,11 @@ class SettingsScreen extends ConsumerWidget {
                     ref.read(localeProvider.notifier).state = Locale(
                       value.single,
                     );
+                    unawaited(
+                      ref
+                          .read(appSettingsStoreProvider)
+                          .saveLocale(Locale(value.single)),
+                    );
                   },
                 ),
               ),
@@ -75,7 +88,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 18),
           _Section(
-            title: 'Dữ liệu và đồng bộ',
+            title: l10n.storageSection,
             children: [
               ListTile(
                 leading: Icon(
@@ -83,33 +96,33 @@ class SettingsScreen extends ConsumerWidget {
                       ? Icons.cloud_done_outlined
                       : Icons.cloud_off_outlined,
                 ),
-                title: const Text('Supabase'),
+                title: Text(l10n.cloudSync),
                 subtitle: Text(
                   supabaseEnabled
-                      ? 'Đã cấu hình • SQLite vẫn là nguồn offline'
-                      : 'Chưa cấu hình • Ứng dụng đang chạy cục bộ',
+                      ? l10n.cloudReady
+                      : l10n.cloudUnavailable,
                 ),
                 trailing: FilledButton.tonal(
                   onPressed: supabaseEnabled ? () {} : null,
-                  child: const Text('Đồng bộ'),
+                  child: Text(l10n.sync),
                 ),
               ),
-              const ListTile(
+              ListTile(
                 leading: Icon(Icons.storage_rounded),
-                title: Text('SQLite cục bộ'),
-                subtitle: Text('CRUD ghi chú, tag, checklist và đường dẫn ảnh'),
+                title: Text(l10n.localStorage),
+                subtitle: Text(l10n.localStorageDescription),
                 trailing: Icon(Icons.check_circle_rounded, color: Colors.green),
               ),
             ],
           ),
           const SizedBox(height: 18),
-          const _Section(
-            title: 'Ứng dụng',
+          _Section(
+            title: l10n.about,
             children: [
               ListTile(
                 leading: Icon(Icons.info_outline_rounded),
-                title: Text('SmartNote'),
-                subtitle: Text('Phiên bản 1.0.0 • vn.edu.smartnote'),
+                title: const Text('SmartNote'),
+                subtitle: Text(l10n.version),
               ),
             ],
           ),

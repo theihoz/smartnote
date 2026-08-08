@@ -77,6 +77,45 @@ void main() {
     expect(repository.notes.single.isFavorite, isTrue);
     expect(controller.state.visibleNotes.single.isFavorite, isTrue);
   });
+
+  test('undo restores the previous note after an edit', () async {
+    final repository = _MemoryNoteRepository([
+      _note(id: '1', title: 'Bản cũ'),
+    ]);
+    final controller = NotesController(
+      repository,
+      now: () => DateTime(2026, 7, 31, 12),
+      newId: () => 'new-id',
+    );
+    await controller.load();
+
+    await controller.saveDraft(
+      const NoteDraft(title: 'Bản mới', body: '', kind: NoteKind.text),
+      id: '1',
+      createdAt: DateTime(2026, 7, 30),
+    );
+
+    expect(controller.canUndo, isTrue);
+    expect(await controller.undo(), isTrue);
+    expect((await repository.getById('1'))!.title, 'Bản cũ');
+  });
+
+  test('undo restores a deleted note', () async {
+    final repository = _MemoryNoteRepository([
+      _note(id: '1', title: 'Cần giữ lại'),
+    ]);
+    final controller = NotesController(
+      repository,
+      now: () => DateTime(2026, 7, 31, 12),
+      newId: () => 'new-id',
+    );
+    await controller.load();
+
+    await controller.delete('1');
+    expect(await repository.getById('1'), isNull);
+    expect(await controller.undo(), isTrue);
+    expect((await repository.getById('1'))!.title, 'Cần giữ lại');
+  });
 }
 
 class _MemoryNoteRepository implements NoteRepository {

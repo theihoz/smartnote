@@ -48,7 +48,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Cần chuẩn bị'), findsOneWidget);
-    expect(find.text('Xong'), findsOneWidget);
+    expect(find.text('Chỉnh sửa'), findsOneWidget);
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).last);
     expect(scaffold.backgroundColor, const Color(0xFF141316));
   });
@@ -66,6 +66,26 @@ void main() {
 
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Settings'), findsWidgets);
+  });
+
+  testWidgets('delete snackbar action restores the deleted note', (tester) async {
+    final repository = _MemoryNoteRepository([_dalatNote()]);
+    await tester.pumpWidget(SmartNoteApp(repository: repository));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Lịch trình du lịch Đà Lạt'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.delete_outline_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Xóa').last);
+    await tester.pumpAndSettle();
+
+    expect(repository.notes, isEmpty);
+    await tester.tap(find.text('Hoàn tác'));
+    await tester.pumpAndSettle();
+
+    expect(repository.notes, hasLength(1));
+    expect(find.text('Lịch trình du lịch Đà Lạt'), findsOneWidget);
   });
 }
 

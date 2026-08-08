@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/smartnote_app.dart';
@@ -8,10 +9,13 @@ import 'features/notes/domain/note.dart';
 import 'features/sync/data/cloud_note_store.dart';
 import 'features/sync/data/outbox_sync_service.dart';
 import 'features/sync/data/supabase_config.dart';
+import 'features/settings/data/app_settings_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  final preferences = await SharedPreferences.getInstance();
+  final settingsStore = AppSettingsRepository(preferences);
   final database = await openSmartNoteDatabase();
   final repository = SqliteNoteRepository(database);
   await _seedDemoNotes(repository);
@@ -37,7 +41,7 @@ Future<void> main() async {
     }
   }
 
-  runApp(SmartNoteApp(repository: repository));
+  runApp(SmartNoteApp(repository: repository, settingsStore: settingsStore));
 }
 
 Future<void> _seedDemoNotes(SqliteNoteRepository repository) async {

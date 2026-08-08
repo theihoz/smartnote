@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../app/providers.dart';
+import '../../../app/app_keys.dart';
+import '../../../l10n/app_localizations.dart';
 import '../domain/note.dart';
 import '../domain/note_validator.dart';
 
@@ -55,14 +57,15 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_original == null ? 'Ghi chú mới' : 'Chỉnh sửa'),
+        title: Text(_original == null ? l10n.newNote : l10n.editNote),
         actions: [
           TextButton(
             key: const Key('save-note-button'),
             onPressed: _save,
-            child: const Text('Lưu'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -78,24 +81,24 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
-                    decoration: const InputDecoration(
-                      hintText: 'Tiêu đề',
+                    decoration: InputDecoration(
+                      hintText: l10n.titleHint,
                       filled: false,
                       border: InputBorder.none,
                     ),
                   ),
                   const SizedBox(height: 12),
                   SegmentedButton<NoteKind>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: NoteKind.text,
                         icon: Icon(Icons.notes_rounded),
-                        label: Text('Văn bản'),
+                        label: Text(l10n.text),
                       ),
                       ButtonSegment(
                         value: NoteKind.checklist,
                         icon: Icon(Icons.checklist_rounded),
-                        label: Text('Checklist'),
+                        label: Text(l10n.taskList),
                       ),
                     ],
                     selected: {_kind},
@@ -108,8 +111,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                       controller: _bodyController,
                       minLines: 10,
                       maxLines: null,
-                      decoration: const InputDecoration(
-                        hintText: 'Bắt đầu viết...',
+                      decoration: InputDecoration(
+                        hintText: l10n.bodyHint,
                         alignLabelWithHint: true,
                       ),
                     )
@@ -130,7 +133,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                   ],
                   if (_images.isNotEmpty) ...[
                     const SizedBox(height: 16),
-                    Text('${_images.length} ảnh đã đính kèm'),
+                    Text(l10n.imageCount(_images.length)),
                   ],
                 ],
               ),
@@ -146,27 +149,27 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    tooltip: 'Máy ảnh',
+                    tooltip: l10n.camera,
                     onPressed: () => _pick(ImageSource.camera),
                     icon: const Icon(Icons.photo_camera_outlined),
                   ),
                   IconButton(
-                    tooltip: 'Thư viện',
+                    tooltip: l10n.gallery,
                     onPressed: () => _pick(ImageSource.gallery),
                     icon: const Icon(Icons.image_outlined),
                   ),
                   IconButton(
-                    tooltip: 'Tag',
+                    tooltip: l10n.addLabel,
                     onPressed: () {},
                     icon: const Icon(Icons.sell_outlined),
                   ),
                   IconButton(
-                    tooltip: 'Màu',
+                    tooltip: l10n.chooseColor,
                     onPressed: () {},
                     icon: const Icon(Icons.palette_outlined),
                   ),
                   const Spacer(),
-                  const Text('Tự động lưu cục bộ'),
+                  Text(l10n.savedOnDevice),
                 ],
               ),
             ),
@@ -185,9 +188,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   }
 
   Future<void> _save() async {
-    final result = await ref
-        .read(notesControllerProvider.notifier)
-        .saveDraft(
+    final l10n = AppLocalizations.of(context);
+    final controller = ref.read(notesControllerProvider.notifier);
+    final result = await controller.saveDraft(
           NoteDraft(
             title: _titleController.text,
             body: _bodyController.text,
@@ -204,15 +207,28 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     if (!mounted) return;
     if (!result.isValid) {
       setState(() {
-        _error = switch (result.generalError) {
+          _error = switch (result.generalError) {
           NoteValidationError.emptyChecklist =>
-            'Hãy thêm ít nhất một mục checklist.',
-          _ => 'Hãy nhập tiêu đề hoặc nội dung.',
+            l10n.emptyChecklistError,
+          _ => l10n.emptyNoteError,
         };
       });
       return;
     }
     context.go('/');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      scaffoldMessengerKey.currentState?.showSnackBar(
+        SnackBar(
+          content: Text(
+            _original == null ? l10n.createdNote : l10n.updatedNote,
+          ),
+          action: SnackBarAction(
+            label: l10n.undo,
+            onPressed: controller.undo,
+          ),
+        ),
+      );
+    });
   }
 }
 
@@ -224,6 +240,7 @@ class _ChecklistEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
         for (var index = 0; index < items.length; index++)
@@ -242,7 +259,7 @@ class _ChecklistEditor extends StatelessWidget {
                   onChanged: (value) {
                     items[index] = items[index].copyWith(text: value);
                   },
-                  decoration: const InputDecoration(hintText: 'Nội dung việc'),
+                    decoration: InputDecoration(hintText: l10n.taskHint),
                 ),
               ),
               IconButton(
@@ -267,7 +284,7 @@ class _ChecklistEditor extends StatelessWidget {
             onChanged();
           },
           icon: const Icon(Icons.add_rounded),
-          label: const Text('Thêm mục'),
+          label: Text(l10n.addTask),
         ),
       ],
     );

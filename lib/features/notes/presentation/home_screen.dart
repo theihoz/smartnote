@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/app_theme.dart';
 import '../../../app/providers.dart';
+import '../../../l10n/app_localizations.dart';
 import 'note_widgets.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -12,6 +13,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(notesControllerProvider);
+    final l10n = AppLocalizations.of(context);
     final notes = state.visibleNotes;
     final taskCount = state.allNotes
         .expand((note) => note.checklist)
@@ -63,12 +65,12 @@ class HomeScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Chào bạn 👋',
+                                l10n.greeting,
                                 style: Theme.of(context).textTheme.titleLarge
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
-                              const Text(
-                                'Ghi lại điều quan trọng hôm nay.',
+                              Text(
+                                l10n.homeSubtitle,
                                 style: TextStyle(color: AppTheme.muted),
                               ),
                             ],
@@ -92,7 +94,7 @@ class HomeScreen extends ConsumerWidget {
                               ),
                               const SizedBox(width: 7),
                               Text(
-                                '$taskCount việc',
+                                l10n.taskCount(taskCount),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -115,12 +117,12 @@ class HomeScreen extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 18),
                       scrollDirection: Axis.horizontal,
                       children: [
-                        for (final tag in const [
-                          'Tất cả',
-                          'Học tập',
-                          'Dự án',
-                          'Ý tưởng',
-                          'Cá nhân',
+                        for (final tag in [
+                          l10n.all,
+                          l10n.study,
+                          l10n.project,
+                          l10n.idea,
+                          l10n.personal,
                         ])
                           Padding(
                             padding: const EdgeInsets.only(right: 8),
@@ -140,7 +142,7 @@ class HomeScreen extends ConsumerWidget {
                     child: Row(
                       children: [
                         Text(
-                          'Ghi chú gần đây',
+                        l10n.recentNotes,
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
@@ -253,7 +255,7 @@ class _InspirationCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: quote.when(
-        loading: () => const Row(
+        loading: () => Row(
           children: [
             SizedBox(
               width: 18,
@@ -261,14 +263,14 @@ class _InspirationCard extends ConsumerWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
             SizedBox(width: 12),
-            Text('Đang tìm cảm hứng...'),
+            Text(AppLocalizations.of(context).inspirationLoading),
           ],
         ),
         error: (_, _) => Row(
           children: [
-            const Expanded(child: Text('Không thể tải câu nói lúc này.')),
+            Expanded(child: Text(AppLocalizations.of(context).inspirationError)),
             IconButton(
-              tooltip: 'Thử lại',
+              tooltip: AppLocalizations.of(context).retry,
               onPressed: () => ref.invalidate(quoteProvider),
               icon: const Icon(Icons.refresh_rounded),
             ),
@@ -291,7 +293,7 @@ class _InspirationCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    '— ${quote.author}',
+                    AppLocalizations.of(context).quoteAuthor(quote.author),
                     style: const TextStyle(
                       color: AppTheme.indigo,
                       fontSize: 12,
@@ -312,7 +314,7 @@ class _EmptyNotes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Padding(
         padding: EdgeInsets.all(32),
         child: Column(
@@ -320,10 +322,10 @@ class _EmptyNotes extends StatelessWidget {
           children: [
             Icon(Icons.note_add_outlined, size: 64, color: AppTheme.indigo),
             SizedBox(height: 16),
-            Text('Chưa có ghi chú'),
+            Text(AppLocalizations.of(context).emptyNotesTitle),
             SizedBox(height: 6),
             Text(
-              'Nhấn nút + để lưu ý tưởng đầu tiên.',
+              AppLocalizations.of(context).emptyNotesBody,
               style: TextStyle(color: AppTheme.muted),
             ),
           ],

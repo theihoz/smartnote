@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
+import '../../../l10n/app_localizations.dart';
 import '../domain/note_query.dart';
 import 'note_widgets.dart';
 
@@ -11,6 +12,7 @@ class SearchScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(notesControllerProvider);
+    final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -18,7 +20,7 @@ class SearchScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Tìm kiếm',
+              l10n.search,
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -27,9 +29,9 @@ class SearchScreen extends ConsumerWidget {
             TextField(
               key: const Key('search-field'),
               autofocus: false,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 prefixIcon: Icon(Icons.search_rounded),
-                hintText: 'Tiêu đề hoặc nội dung...',
+                hintText: l10n.searchHint,
                 suffixIcon: Icon(Icons.tune_rounded),
               ),
               onChanged: (value) => ref
@@ -39,7 +41,7 @@ class SearchScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             Expanded(
               child: state.visibleNotes.isEmpty
-                  ? const Center(child: Text('Không tìm thấy ghi chú phù hợp.'))
+                  ? Center(child: Text(l10n.noSearchResults))
                   : GridView.builder(
                       gridDelegate:
                           const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -77,6 +79,7 @@ class FavoritesScreen extends ConsumerWidget {
         .allNotes
         .where((note) => note.isFavorite)
         .toList();
+    final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -84,7 +87,7 @@ class FavoritesScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Yêu thích',
+              l10n.favorites,
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -92,10 +95,8 @@ class FavoritesScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             Expanded(
               child: notes.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'Những ghi chú yêu thích sẽ xuất hiện ở đây.',
-                      ),
+                  ? Center(
+                      child: Text(l10n.emptyFavorites),
                     )
                   : GridView.builder(
                       gridDelegate:

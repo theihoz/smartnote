@@ -9,18 +9,26 @@ import '../features/notes/presentation/library_screens.dart';
 import '../features/notes/presentation/note_detail_screen.dart';
 import '../features/notes/presentation/note_editor_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
+import '../features/settings/data/app_settings_repository.dart';
 import 'app_theme.dart';
+import 'app_keys.dart';
 import 'providers.dart';
+import '../l10n/app_localizations.dart';
 
 class SmartNoteApp extends StatelessWidget {
-  const SmartNoteApp({super.key, required this.repository});
+  const SmartNoteApp({super.key, required this.repository, this.settingsStore});
 
   final NoteRepository repository;
+  final AppSettingsStore? settingsStore;
 
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
-      overrides: [noteRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        noteRepositoryProvider.overrideWithValue(repository),
+        if (settingsStore != null)
+          appSettingsStoreProvider.overrideWithValue(settingsStore!),
+      ],
       child: const _SmartNoteRouterApp(),
     );
   }
@@ -78,6 +86,7 @@ class _SmartNoteRouterAppState extends ConsumerState<_SmartNoteRouterApp> {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: scaffoldMessengerKey,
       title: 'SmartNote',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
@@ -85,6 +94,7 @@ class _SmartNoteRouterAppState extends ConsumerState<_SmartNoteRouterApp> {
       locale: ref.watch(localeProvider),
       supportedLocales: const [Locale('vi'), Locale('en')],
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -105,26 +115,26 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isWide = MediaQuery.sizeOf(context).width >= 700;
-    final isEnglish = ref.watch(localeProvider).languageCode == 'en';
+    final l10n = AppLocalizations.of(context);
     final destinations = [
       NavigationDestination(
         icon: const Icon(Icons.home_outlined),
         selectedIcon: const Icon(Icons.home_rounded),
-        label: isEnglish ? 'Home' : 'Trang chủ',
+        label: l10n.home,
       ),
       NavigationDestination(
         icon: const Icon(Icons.search_rounded),
-        label: isEnglish ? 'Search' : 'Tìm kiếm',
+        label: l10n.search,
       ),
       NavigationDestination(
         icon: const Icon(Icons.favorite_border_rounded),
         selectedIcon: const Icon(Icons.favorite_rounded),
-        label: isEnglish ? 'Favorites' : 'Yêu thích',
+        label: l10n.favorites,
       ),
       NavigationDestination(
         icon: const Icon(Icons.settings_outlined),
         selectedIcon: const Icon(Icons.settings_rounded),
-        label: isEnglish ? 'Settings' : 'Cài đặt',
+        label: l10n.settings,
       ),
     ];
 

@@ -55,7 +55,7 @@ abstract final class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(20)),
+          borderRadius: BorderRadius.all(Radius.circular(14)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -67,7 +67,7 @@ abstract final class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        height: 72,
+        height: 68,
         indicatorColor: scheme.primaryContainer,
         labelTextStyle: const WidgetStatePropertyAll(
           TextStyle(
