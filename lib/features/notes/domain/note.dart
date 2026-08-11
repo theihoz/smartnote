@@ -58,6 +58,7 @@ class Note {
     required this.imagePaths,
     required this.createdAt,
     required this.updatedAt,
+    this.isLocked = false,
   });
 
   final String id;
@@ -71,6 +72,7 @@ class Note {
   final List<String> imagePaths;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isLocked;
 
   int get completedChecklistItems =>
       checklist.where((item) => item.isDone).length;
@@ -88,6 +90,7 @@ class Note {
     String? colorKey,
     List<String>? imagePaths,
     DateTime? updatedAt,
+    bool? isLocked,
   }) {
     return Note(
       id: id,
@@ -101,6 +104,7 @@ class Note {
       imagePaths: imagePaths ?? this.imagePaths,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isLocked: isLocked ?? this.isLocked,
     );
   }
 }

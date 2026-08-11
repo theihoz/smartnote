@@ -7,33 +7,47 @@ import 'package:go_router/go_router.dart';
 import '../../../app/providers.dart';
 import '../../../app/app_keys.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../l10n/feature_text.dart';
 import '../domain/note.dart';
+import '../../security/data/pin_lock_service.dart';
+import '../../reminders/presentation/reminder_sheet.dart';
 
-class NoteDetailScreen extends ConsumerWidget {
+class NoteDetailScreen extends ConsumerStatefulWidget {
   const NoteDetailScreen({super.key, required this.noteId});
 
   final String noteId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NoteDetailScreen> createState() => _NoteDetailScreenState();
+}
+
+class _NoteDetailScreenState extends ConsumerState<NoteDetailScreen> {
+  var _sessionUnlocked = false;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).colorScheme;
     final state = ref.watch(notesControllerProvider);
     Note? note;
     for (final candidate in state.allNotes) {
-      if (candidate.id == noteId) note = candidate;
+      if (candidate.id == widget.noteId) note = candidate;
     }
     if (note == null) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF141316),
+      return Scaffold(
+        backgroundColor: colors.surface,
         body: Center(child: CircularProgressIndicator()),
       );
     }
     final current = note;
+    if (current.isLocked && !_sessionUnlocked) {
+      return _buildLockedGate(context);
+    }
     return Scaffold(
-      backgroundColor: const Color(0xFF141316),
+      backgroundColor: colors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF141316),
-        foregroundColor: const Color(0xFFE5E1FF),
+        backgroundColor: colors.surface,
+        foregroundColor: colors.onSurface,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           onPressed: context.pop,
@@ -49,6 +63,29 @@ class NoteDetailScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
+            tooltip: featureText(context, vi: 'Nhắc việc', en: 'Reminder'),
+            onPressed: () => showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              showDragHandle: false,
+              builder: (_) => ReminderSheet(
+                note: current,
+                repository: ref.read(reminderRepositoryProvider),
+                scheduler: ref.read(reminderSchedulerProvider),
+              ),
+            ),
+            icon: const Icon(Icons.notifications_none_rounded),
+          ),
+          IconButton(
+            tooltip: current.isLocked
+                ? featureText(context, vi: 'Bỏ khóa', en: 'Remove lock')
+                : featureText(context, vi: 'Khóa ghi chú', en: 'Lock note'),
+            onPressed: () => _toggleLock(context, ref, current),
+            icon: Icon(
+              current.isLocked ? Icons.lock_rounded : Icons.lock_open_rounded,
+            ),
+          ),
+          IconButton(
             tooltip: l10n.favorite,
             onPressed: () => ref
                 .read(notesControllerProvider.notifier)
@@ -57,7 +94,7 @@ class NoteDetailScreen extends ConsumerWidget {
               current.isFavorite
                   ? Icons.favorite_rounded
                   : Icons.favorite_border_rounded,
-              color: const Color(0xFFFFA5A5),
+              color: colors.error,
             ),
           ),
           IconButton(
@@ -87,8 +124,8 @@ class NoteDetailScreen extends ConsumerWidget {
                       color: Colors.transparent,
                       child: Text(
                         current.title,
-                        style: const TextStyle(
-                          color: Color(0xFFE5E1FF),
+                        style: TextStyle(
+                          color: colors.onSurface,
                           fontSize: 28,
                           height: 1.28,
                           fontWeight: FontWeight.w700,
@@ -103,7 +140,10 @@ class NoteDetailScreen extends ConsumerWidget {
                     children: [
                       for (final tag in current.tags)
                         Chip(
-                          avatar: const Icon(Icons.label_outline_rounded, size: 15),
+                          avatar: const Icon(
+                            Icons.label_outline_rounded,
+                            size: 15,
+                          ),
                           label: Text(tag),
                         ),
                       Chip(
@@ -120,8 +160,8 @@ class NoteDetailScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
                     Text(
                       current.body,
-                      style: const TextStyle(
-                        color: Color(0xFFE5E1E5),
+                      style: TextStyle(
+                        color: colors.onSurfaceVariant,
                         fontSize: 16,
                         height: 1.5,
                       ),
@@ -150,8 +190,8 @@ class NoteDetailScreen extends ConsumerWidget {
                   onPressed: () => context.push('/editor/${current.id}'),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(48),
-                    backgroundColor: const Color(0xFFE5E1FF),
-                    foregroundColor: const Color(0xFF2F2C52),
+                    backgroundColor: colors.primary,
+                    foregroundColor: colors.onPrimary,
                   ),
                   icon: const Icon(Icons.edit_rounded),
                   label: Text(l10n.editNote),
@@ -159,6 +199,93 @@ class NoteDetailScreen extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLockedGate(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final service = ref.read(pinLockServiceProvider);
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: context.pop,
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
+        title: Text(
+          featureText(context, vi: 'Ghi chú đã khóa', en: 'Locked note'),
+        ),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleAvatar(
+                      radius: 34,
+                      backgroundColor: colors.primaryContainer,
+                      child: Icon(
+                        Icons.lock_rounded,
+                        size: 34,
+                        color: colors.onPrimaryContainer,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      featureText(
+                        context,
+                        vi: 'Nội dung được bảo vệ bằng PIN',
+                        en: 'Content is protected by a PIN',
+                      ),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      featureText(
+                        context,
+                        vi: 'Mở khóa chỉ có hiệu lực trong lần xem này.',
+                        en: 'Unlocking only applies to this viewing session.',
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 22),
+                    FilledButton.icon(
+                      onPressed: service == null
+                          ? () => context.push('/security')
+                          : () async {
+                              if (await _verifyPin(context, service) &&
+                                  mounted) {
+                                setState(() => _sessionUnlocked = true);
+                              }
+                            },
+                      icon: const Icon(Icons.key_rounded),
+                      label: Text(
+                        service == null
+                            ? featureText(
+                                context,
+                                vi: 'Thiết lập PIN',
+                                en: 'Set up PIN',
+                              )
+                            : featureText(
+                                context,
+                                vi: 'Nhập PIN để xem',
+                                en: 'Enter PIN to view',
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -191,12 +318,94 @@ class NoteDetailScreen extends ConsumerWidget {
     scaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
         content: Text(l10n.deletedNote),
-        action: SnackBarAction(
-          label: l10n.undo,
-          onPressed: controller.undo,
-        ),
+        action: SnackBarAction(label: l10n.undo, onPressed: controller.undo),
       ),
     );
+  }
+
+  Future<void> _toggleLock(
+    BuildContext context,
+    WidgetRef ref,
+    Note note,
+  ) async {
+    final service = ref.read(pinLockServiceProvider);
+    if (service == null || !service.isConfigured) {
+      await context.push('/security');
+      return;
+    }
+    if (!note.isLocked) {
+      await ref.read(notesControllerProvider.notifier).setLocked(note.id, true);
+      return;
+    }
+    if (await _verifyPin(context, service) && context.mounted) {
+      await ref
+          .read(notesControllerProvider.notifier)
+          .setLocked(note.id, false);
+      setState(() => _sessionUnlocked = true);
+    }
+  }
+
+  Future<bool> _verifyPin(BuildContext context, PinLockService service) async {
+    final pin = TextEditingController();
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          featureText(
+            context,
+            vi: 'Nhập PIN để mở khóa',
+            en: 'Enter PIN to unlock',
+          ),
+        ),
+        content: TextField(
+          controller: pin,
+          autofocus: true,
+          obscureText: true,
+          keyboardType: TextInputType.number,
+          maxLength: 6,
+          decoration: const InputDecoration(labelText: 'PIN'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(featureText(context, vi: 'Hủy', en: 'Cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(featureText(context, vi: 'Mở khóa', en: 'Unlock')),
+          ),
+        ],
+      ),
+    );
+    if (submitted != true) {
+      pin.dispose();
+      return false;
+    }
+    final result = await service.verify(pin.text);
+    pin.dispose();
+    if (!context.mounted) return false;
+    if (result == PinVerification.verified) {
+      return true;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result == PinVerification.locked
+                ? featureText(
+                    context,
+                    vi: 'Đã khóa thử lại trong 30 giây.',
+                    en: 'Retries are locked for 30 seconds.',
+                  )
+                : featureText(
+                    context,
+                    vi: 'PIN không đúng.',
+                    en: 'Incorrect PIN.',
+                  ),
+          ),
+        ),
+      );
+      return false;
+    }
   }
 }
 
@@ -208,11 +417,12 @@ class _Checklist extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0x33928F99)),
+        border: Border.all(color: colors.outlineVariant),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -220,12 +430,12 @@ class _Checklist extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.checklist_rounded, color: Color(0xFFE5E1FF)),
+              Icon(Icons.checklist_rounded, color: colors.onSurface),
               const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
-                  color: Color(0xFFE5E1FF),
+                style: TextStyle(
+                  color: colors.onSurface,
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                 ),
@@ -243,9 +453,7 @@ class _Checklist extends StatelessWidget {
                     item.isDone
                         ? Icons.check_box_rounded
                         : Icons.check_box_outline_blank_rounded,
-                    color: item.isDone
-                        ? const Color(0xFFE5E1FF)
-                        : const Color(0xFF928F99),
+                    color: item.isDone ? colors.primary : colors.outline,
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -253,10 +461,12 @@ class _Checklist extends StatelessWidget {
                       item.text,
                       style: TextStyle(
                         color: item.isDone
-                            ? const Color(0xFFC9C5CF)
-                            : const Color(0xFFE5E1E5),
+                            ? colors.onSurfaceVariant
+                            : colors.onSurface,
                         fontSize: 16,
-                        decoration: item.isDone ? TextDecoration.lineThrough : null,
+                        decoration: item.isDone
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                   ),

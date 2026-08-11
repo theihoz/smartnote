@@ -191,25 +191,24 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     final l10n = AppLocalizations.of(context);
     final controller = ref.read(notesControllerProvider.notifier);
     final result = await controller.saveDraft(
-          NoteDraft(
-            title: _titleController.text,
-            body: _bodyController.text,
-            kind: _kind,
-            checklist: _checklist,
-            tags: _original?.tags ?? const [],
-            colorKey: _original?.colorKey ?? 'lavender',
-            imagePaths: _images,
-            isFavorite: _original?.isFavorite ?? false,
-          ),
-          id: _original?.id,
-          createdAt: _original?.createdAt,
-        );
+      NoteDraft(
+        title: _titleController.text,
+        body: _bodyController.text,
+        kind: _kind,
+        checklist: _checklist,
+        tags: _original?.tags ?? const [],
+        colorKey: _original?.colorKey ?? 'lavender',
+        imagePaths: _images,
+        isFavorite: _original?.isFavorite ?? false,
+      ),
+      id: _original?.id,
+      createdAt: _original?.createdAt,
+    );
     if (!mounted) return;
     if (!result.isValid) {
       setState(() {
-          _error = switch (result.generalError) {
-          NoteValidationError.emptyChecklist =>
-            l10n.emptyChecklistError,
+        _error = switch (result.generalError) {
+          NoteValidationError.emptyChecklist => l10n.emptyChecklistError,
           _ => l10n.emptyNoteError,
         };
       });
@@ -222,10 +221,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
           content: Text(
             _original == null ? l10n.createdNote : l10n.updatedNote,
           ),
-          action: SnackBarAction(
-            label: l10n.undo,
-            onPressed: controller.undo,
-          ),
+          action: SnackBarAction(label: l10n.undo, onPressed: controller.undo),
         ),
       );
     });
@@ -259,7 +255,7 @@ class _ChecklistEditor extends StatelessWidget {
                   onChanged: (value) {
                     items[index] = items[index].copyWith(text: value);
                   },
-                    decoration: InputDecoration(hintText: l10n.taskHint),
+                  decoration: InputDecoration(hintText: l10n.taskHint),
                 ),
               ),
               IconButton(

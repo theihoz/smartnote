@@ -1,10 +1,12 @@
+import 'dart:convert';
+
 import 'package:sqflite/sqflite.dart';
 
 import '../domain/note.dart';
 import '../domain/note_query.dart';
 import '../domain/note_repository.dart';
 
-class SqliteNoteRepository implements NoteRepository {
+class SqliteNoteRepository implements NoteRepository, TrashNoteRepository {
   SqliteNoteRepository(this._database);
 
   final Database _database;
@@ -12,16 +14,28 @@ class SqliteNoteRepository implements NoteRepository {
   @override
   Future<void> save(Note note) {
     return _database.transaction((transaction) async {
-      await transaction.insert('notes', {
+      final noteRow = {
         'id': note.id,
         'title': note.title,
         'body': note.body,
         'kind': note.kind.name,
         'is_favorite': note.isFavorite ? 1 : 0,
         'color_key': note.colorKey,
+        'is_locked': note.isLocked ? 1 : 0,
         'created_at': note.createdAt.toIso8601String(),
         'updated_at': note.updatedAt.toIso8601String(),
-      }, conflictAlgorithm: ConflictAlgorithm.replace);
+      };
+      await transaction.insert(
+        'notes',
+        noteRow,
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+      await transaction.update(
+        'notes',
+        noteRow,
+        where: 'id = ?',
+        whereArgs: [note.id],
+      );
 
       await transaction.delete(
         'note_tags',
@@ -65,6 +79,24 @@ class SqliteNoteRepository implements NoteRepository {
           'position': position,
         });
       }
+      await transaction.insert('note_versions', {
+        'id': '${note.id}-${DateTime.now().microsecondsSinceEpoch}',
+        'note_id': note.id,
+        'snapshot': jsonEncode(_versionSnapshot(note)),
+        'created_at': note.updatedAt.toUtc().toIso8601String(),
+      });
+      await transaction.rawDelete(
+        '''
+          DELETE FROM note_versions
+          WHERE note_id = ? AND id NOT IN (
+            SELECT id FROM note_versions
+            WHERE note_id = ?
+            ORDER BY created_at DESC
+            LIMIT 20
+          )
+        ''',
+        [note.id, note.id],
+      );
       await _recordOutbox(transaction, note.id, 'upsert');
     });
   }
@@ -72,7 +104,12 @@ class SqliteNoteRepository implements NoteRepository {
   @override
   Future<void> delete(String id) {
     return _database.transaction((transaction) async {
-      await transaction.delete('notes', where: 'id = ?', whereArgs: [id]);
+      await transaction.update(
+        'notes',
+        {'deleted_at': DateTime.now().toUtc().toIso8601String()},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
       await _recordOutbox(transaction, id, 'delete');
     });
   }
@@ -91,12 +128,52 @@ class SqliteNoteRepository implements NoteRepository {
 
   @override
   Future<List<Note>> list([NoteQuery query = const NoteQuery()]) async {
-    final rows = await _database.query('notes');
+    final rows = await _database.query('notes', where: 'deleted_at IS NULL');
     final notes = <Note>[];
     for (final row in rows) {
       notes.add(await _hydrate(row));
     }
     return query.apply(notes);
+  }
+
+  @override
+  Future<List<Note>> listTrash() async {
+    final rows = await _database.query(
+      'notes',
+      where: 'deleted_at IS NOT NULL',
+      orderBy: 'deleted_at DESC',
+    );
+    final notes = <Note>[];
+    for (final row in rows) {
+      notes.add(await _hydrate(row));
+    }
+    return notes;
+  }
+
+  @override
+  Future<void> restoreFromTrash(String id) {
+    return _database.transaction((transaction) async {
+      await transaction.update(
+        'notes',
+        {
+          'deleted_at': null,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      await _recordOutbox(transaction, id, 'upsert');
+    });
+  }
+
+  @override
+  Future<int> purgeExpiredTrash(DateTime now) {
+    final cutoff = now.toUtc().subtract(const Duration(days: 30));
+    return _database.delete(
+      'notes',
+      where: 'deleted_at IS NOT NULL AND deleted_at <= ?',
+      whereArgs: [cutoff.toIso8601String()],
+    );
   }
 
   Future<Note> _hydrate(Map<String, Object?> row) async {
@@ -143,6 +220,7 @@ class SqliteNoteRepository implements NoteRepository {
       imagePaths: imageRows.map((image) => image['path']! as String).toList(),
       createdAt: DateTime.parse(row['created_at']! as String),
       updatedAt: DateTime.parse(row['updated_at']! as String),
+      isLocked: row['is_locked'] == 1,
     );
   }
 
@@ -157,5 +235,27 @@ class SqliteNoteRepository implements NoteRepository {
       'created_at': DateTime.now().toUtc().toIso8601String(),
       'attempts': 0,
     });
+  }
+
+  Map<String, Object?> _versionSnapshot(Note note) {
+    return {
+      'title': note.title,
+      'body': note.body,
+      'kind': note.kind.name,
+      'is_favorite': note.isFavorite,
+      'color_key': note.colorKey,
+      'tags': note.tags,
+      'image_paths': note.imagePaths,
+      'checklist': note.checklist
+          .map(
+            (item) => {
+              'id': item.id,
+              'text': item.text,
+              'is_done': item.isDone,
+              'position': item.position,
+            },
+          )
+          .toList(),
+    };
   }
 }

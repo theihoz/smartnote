@@ -142,7 +142,7 @@ class HomeScreen extends ConsumerWidget {
                     child: Row(
                       children: [
                         Text(
-                        l10n.recentNotes,
+                          l10n.recentNotes,
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
@@ -268,7 +268,9 @@ class _InspirationCard extends ConsumerWidget {
         ),
         error: (_, _) => Row(
           children: [
-            Expanded(child: Text(AppLocalizations.of(context).inspirationError)),
+            Expanded(
+              child: Text(AppLocalizations.of(context).inspirationError),
+            ),
             IconButton(
               tooltip: AppLocalizations.of(context).retry,
               onPressed: () => ref.invalidate(quoteProvider),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:async';
 
 import '../../../app/providers.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../l10n/feature_text.dart';
 import '../../sync/data/supabase_config.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -31,6 +33,40 @@ class SettingsScreen extends ConsumerWidget {
             title: l10n.themeSection,
             children: [
               ListTile(
+                leading: const Icon(Icons.lock_outline_rounded),
+                title: Text(
+                  featureText(context, vi: 'Khóa ghi chú', en: 'Note lock'),
+                ),
+                subtitle: Text(
+                  featureText(
+                    context,
+                    vi: 'PIN chung 4–6 số, chống thử sai',
+                    en: 'One 4–6 digit PIN with retry protection',
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push('/security'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.account_circle_outlined),
+                title: Text(
+                  featureText(
+                    context,
+                    vi: 'Tài khoản đồng bộ',
+                    en: 'Sync account',
+                  ),
+                ),
+                subtitle: Text(
+                  featureText(
+                    context,
+                    vi: 'Đăng nhập bằng email và mật khẩu',
+                    en: 'Sign in with email and password',
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push('/auth'),
+              ),
+              ListTile(
                 leading: const Icon(Icons.brightness_6_outlined),
                 title: Text(l10n.themeMode),
                 subtitle: Text(switch (themeMode) {
@@ -44,9 +80,7 @@ class SettingsScreen extends ConsumerWidget {
                     if (value != null) {
                       ref.read(themeModeProvider.notifier).state = value;
                       unawaited(
-                        ref
-                            .read(appSettingsStoreProvider)
-                            .saveThemeMode(value),
+                        ref.read(appSettingsStoreProvider).saveThemeMode(value),
                       );
                     }
                   },
@@ -59,7 +93,10 @@ class SettingsScreen extends ConsumerWidget {
                       value: ThemeMode.light,
                       child: Text(l10n.light),
                     ),
-                    DropdownMenuItem(value: ThemeMode.dark, child: Text(l10n.dark)),
+                    DropdownMenuItem(
+                      value: ThemeMode.dark,
+                      child: Text(l10n.dark),
+                    ),
                   ],
                 ),
               ),
@@ -98,14 +135,40 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 title: Text(l10n.cloudSync),
                 subtitle: Text(
-                  supabaseEnabled
-                      ? l10n.cloudReady
-                      : l10n.cloudUnavailable,
+                  supabaseEnabled ? l10n.cloudReady : l10n.cloudUnavailable,
                 ),
                 trailing: FilledButton.tonal(
                   onPressed: supabaseEnabled ? () {} : null,
                   child: Text(l10n.sync),
                 ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.ios_share_rounded),
+                title: Text(
+                  featureText(context, vi: 'Xuất ghi chú', en: 'Export notes'),
+                ),
+                subtitle: Text(
+                  featureText(
+                    context,
+                    vi: 'Chọn nhiều ghi chú, PDF hoặc Markdown',
+                    en: 'Select multiple notes as PDF or Markdown',
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push('/export'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline_rounded),
+                title: Text(featureText(context, vi: 'Thùng rác', en: 'Trash')),
+                subtitle: Text(
+                  featureText(
+                    context,
+                    vi: 'Khôi phục ghi chú trong vòng 30 ngày',
+                    en: 'Restore notes within 30 days',
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push('/trash'),
               ),
               ListTile(
                 leading: Icon(Icons.storage_rounded),

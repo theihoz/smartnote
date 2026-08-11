@@ -95,9 +95,7 @@ class FavoritesScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             Expanded(
               child: notes.isEmpty
-                  ? Center(
-                      child: Text(l10n.emptyFavorites),
-                    )
+                  ? Center(child: Text(l10n.emptyFavorites))
                   : GridView.builder(
                       gridDelegate:
                           const SliverGridDelegateWithMaxCrossAxisExtent(

@@ -4,6 +4,7 @@ import 'package:smartnote/app/smartnote_app.dart';
 import 'package:smartnote/features/notes/domain/note.dart';
 import 'package:smartnote/features/notes/domain/note_query.dart';
 import 'package:smartnote/features/notes/domain/note_repository.dart';
+import 'package:smartnote/features/notes/presentation/note_widgets.dart';
 
 void main() {
   testWidgets('home renders repository notes and opens search', (tester) async {
@@ -36,7 +37,7 @@ void main() {
     expect(find.text('Hãy nhập tiêu đề hoặc nội dung.'), findsOneWidget);
   });
 
-  testWidgets('note card opens the Figma-inspired dark detail screen', (
+  testWidgets('note card opens a detail screen that follows the active theme', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -50,7 +51,43 @@ void main() {
     expect(find.text('Cần chuẩn bị'), findsOneWidget);
     expect(find.text('Chỉnh sửa'), findsOneWidget);
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).last);
-    expect(scaffold.backgroundColor, const Color(0xFF141316));
+    final context = tester.element(find.byType(Scaffold).last);
+    expect(scaffold.backgroundColor, Theme.of(context).colorScheme.surface);
+  });
+
+  testWidgets('note detail opens reminder editor', (tester) async {
+    await tester.pumpWidget(
+      SmartNoteApp(repository: _MemoryNoteRepository([_dalatNote()])),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(NoteCard));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.notifications_none_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nhắc việc'), findsOneWidget);
+    expect(find.text('Ngày và giờ'), findsOneWidget);
+    expect(find.text('Lặp lại'), findsOneWidget);
+  });
+
+  testWidgets('locked note hides its content until PIN verification', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      SmartNoteApp(
+        repository: _MemoryNoteRepository([
+          _dalatNote().copyWith(isLocked: true),
+        ]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(NoteCard));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ghi chú đã khóa'), findsOneWidget);
+    expect(find.textContaining('Lịch trình ngày 1'), findsNothing);
   });
 
   testWidgets('switching to English updates navigation labels', (tester) async {
@@ -66,9 +103,61 @@ void main() {
 
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Settings'), findsWidgets);
+    expect(find.text('Sync account'), findsOneWidget);
+    expect(find.text('Export notes'), findsOneWidget);
   });
 
-  testWidgets('delete snackbar action restores the deleted note', (tester) async {
+  testWidgets('settings opens the trash screen', (tester) async {
+    await tester.pumpWidget(
+      SmartNoteApp(repository: _MemoryNoteRepository([])),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Thùng rác'), 250);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Thùng rác'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ghi chú đã xóa'), findsOneWidget);
+  });
+
+  testWidgets('settings opens multi-note export screen', (tester) async {
+    await tester.pumpWidget(
+      SmartNoteApp(repository: _MemoryNoteRepository([_dalatNote()])),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Xuất ghi chú'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Chọn ghi chú để xuất'), findsOneWidget);
+    expect(find.text('Xuất PDF'), findsOneWidget);
+    expect(find.text('Xuất Markdown'), findsOneWidget);
+  });
+
+  testWidgets('settings opens email password sign-in screen', (tester) async {
+    await tester.pumpWidget(
+      SmartNoteApp(repository: _MemoryNoteRepository([])),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tài khoản đồng bộ'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Đăng nhập SmartNote'), findsOneWidget);
+    expect(find.byKey(const Key('auth-email')), findsOneWidget);
+    expect(find.byKey(const Key('auth-password')), findsOneWidget);
+  });
+
+  testWidgets('delete snackbar action restores the deleted note', (
+    tester,
+  ) async {
     final repository = _MemoryNoteRepository([_dalatNote()]);
     await tester.pumpWidget(SmartNoteApp(repository: repository));
     await tester.pumpAndSettle();

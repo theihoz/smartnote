@@ -3,7 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 abstract interface class CloudNoteStore {
   Future<void> upsert(Map<String, Object?> note);
 
-  Future<void> delete(String noteId);
+  Future<void> delete(String noteId, {DateTime? deletedAt});
+
+  Future<List<Map<String, Object?>>> fetchNotes({DateTime? updatedAfter});
 }
 
 class SupabaseCloudNoteStore implements CloudNoteStore {
@@ -21,7 +23,29 @@ class SupabaseCloudNoteStore implements CloudNoteStore {
   }
 
   @override
-  Future<void> delete(String noteId) {
-    return _client.from('notes').delete().eq('id', noteId);
+  Future<void> delete(String noteId, {DateTime? deletedAt}) {
+    final timestamp = deletedAt ?? DateTime.now().toUtc();
+    return _client
+        .from('notes')
+        .update({
+          'deleted_at': timestamp.toIso8601String(),
+          'updated_at': timestamp.toIso8601String(),
+        })
+        .eq('id', noteId);
+  }
+
+  @override
+  Future<List<Map<String, Object?>>> fetchNotes({
+    DateTime? updatedAfter,
+  }) async {
+    final data = updatedAfter == null
+        ? await _client.from('notes').select()
+        : await _client
+              .from('notes')
+              .select()
+              .gt('updated_at', updatedAfter.toUtc().toIso8601String());
+    return (data as List)
+        .map((row) => Map<String, Object?>.from(row as Map))
+        .toList();
   }
 }

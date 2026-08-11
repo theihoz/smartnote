@@ -10,3 +10,11 @@ abstract interface class NoteRepository {
 
   Future<void> delete(String id);
 }
+
+abstract interface class TrashNoteRepository {
+  Future<List<Note>> listTrash();
+
+  Future<void> restoreFromTrash(String id);
+
+  Future<int> purgeExpiredTrash(DateTime now);
+}

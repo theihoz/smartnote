@@ -107,15 +107,25 @@ void main() {
     expect(notes.map((note) => note.id), ['favorite']);
   });
 
-  test('deletes a note and its aggregate', () async {
-    final note = _note();
-    await repository.save(note);
+  test(
+    'soft deletes a note while retaining it for the 30-day trash window',
+    () async {
+      final note = _note();
+      await repository.save(note);
 
-    await repository.delete(note.id);
+      await repository.delete(note.id);
 
-    expect(await repository.getById(note.id), isNull);
-    expect(await repository.list(), isEmpty);
-  });
+      final row = (await database.query(
+        'notes',
+        columns: ['deleted_at'],
+        where: 'id = ?',
+        whereArgs: [note.id],
+      )).single;
+
+      expect(row['deleted_at'], isNotNull);
+      expect(await repository.list(), isEmpty);
+    },
+  );
 
   test('records an outbox row after each local save and delete', () async {
     final note = _note();
@@ -129,6 +139,78 @@ void main() {
 
     expect(outbox.map((row) => row['operation']), ['upsert', 'delete']);
     expect(outbox.every((row) => row['note_id'] == note.id), isTrue);
+  });
+
+  test('persists a reminder and a version snapshot for a note', () async {
+    final note = _note();
+    await repository.save(note);
+
+    await database.insert('note_reminders', {
+      'note_id': note.id,
+      'scheduled_at': '2026-08-12T09:00:00.000Z',
+      'timezone': 'Asia/Ho_Chi_Minh',
+      'repeat_type': 'weekly',
+      'repeat_interval': 1,
+      'weekdays': '[1, 3, 5]',
+      'enabled': 1,
+    });
+    await database.insert('note_versions', {
+      'id': 'version-1',
+      'note_id': note.id,
+      'snapshot': '{"title":"Ghi chú"}',
+      'created_at': '2026-07-31T09:00:00.000Z',
+    });
+
+    expect(
+      (await database.query('note_reminders')).single['repeat_type'],
+      'weekly',
+    );
+    final versionRows = await database.query(
+      'note_versions',
+      where: 'id = ?',
+      whereArgs: ['version-1'],
+    );
+    expect(versionRows.single['id'], 'version-1');
+  });
+
+  test('creates a version snapshot on every note save', () async {
+    final note = _note(title: 'Bản đầu');
+    await repository.save(note);
+    await repository.save(
+      note.copyWith(title: 'Bản đã sửa', updatedAt: DateTime(2026, 7, 31, 10)),
+    );
+
+    final versions = await database.query(
+      'note_versions',
+      where: 'note_id = ?',
+      whereArgs: [note.id],
+      orderBy: 'created_at ASC',
+    );
+
+    expect(versions, hasLength(2));
+    expect(versions.last['snapshot'], contains('Bản đã sửa'));
+  });
+
+  test('lists, restores and purges notes from the 30-day trash', () async {
+    final note = _note();
+    await repository.save(note);
+    await repository.delete(note.id);
+
+    expect((await repository.listTrash()).single.id, note.id);
+
+    await repository.restoreFromTrash(note.id);
+    expect((await repository.list()).single.id, note.id);
+
+    await repository.delete(note.id);
+    await database.update(
+      'notes',
+      {'deleted_at': '2026-06-01T00:00:00.000Z'},
+      where: 'id = ?',
+      whereArgs: [note.id],
+    );
+    await repository.purgeExpiredTrash(DateTime.utc(2026, 8, 1));
+
+    expect(await repository.getById(note.id), isNull);
   });
 }
 

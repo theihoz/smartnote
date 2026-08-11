@@ -79,9 +79,7 @@ void main() {
   });
 
   test('undo restores the previous note after an edit', () async {
-    final repository = _MemoryNoteRepository([
-      _note(id: '1', title: 'Bản cũ'),
-    ]);
+    final repository = _MemoryNoteRepository([_note(id: '1', title: 'Bản cũ')]);
     final controller = NotesController(
       repository,
       now: () => DateTime(2026, 7, 31, 12),
@@ -115,6 +113,24 @@ void main() {
     expect(await repository.getById('1'), isNull);
     expect(await controller.undo(), isTrue);
     expect((await repository.getById('1'))!.title, 'Cần giữ lại');
+  });
+
+  test('locks and unlocks a note while persisting the state', () async {
+    final repository = _MemoryNoteRepository([
+      _note(id: '1', title: 'Riêng tư'),
+    ]);
+    final controller = NotesController(
+      repository,
+      now: () => DateTime(2026, 7, 31, 12),
+      newId: () => 'new-id',
+    );
+    await controller.load();
+
+    await controller.setLocked('1', true);
+    expect(repository.notes.single.isLocked, isTrue);
+
+    await controller.setLocked('1', false);
+    expect(repository.notes.single.isLocked, isFalse);
   });
 }
 

@@ -46,6 +46,7 @@ void main() {
       'body': 'Nội dung',
       'kind': 'text',
       'is_favorite': true,
+      'is_locked': false,
       'color_key': 'lavender',
       'tags': ['Dự án'],
       'image_paths': <String>[],
@@ -54,6 +55,10 @@ void main() {
       'updated_at': '2026-07-31T09:00:00.000',
     });
     expect(await database.query('sync_outbox'), isEmpty);
+    expect(
+      (await database.query('sync_state')).single['last_synced_at'],
+      isNotNull,
+    );
   });
 
   test('keeps a failed outbox row and increments attempts', () async {
@@ -76,23 +81,97 @@ void main() {
     expect(result.failed, 1);
     expect(row['attempts'], 1);
   });
+
+  test('syncs a deleted note as a cloud tombstone', () async {
+    final database = await openSmartNoteDatabase(
+      factory: databaseFactoryFfi,
+      path: inMemoryDatabasePath,
+    );
+    addTearDown(database.close);
+    final repository = SqliteNoteRepository(database);
+    final cloud = _RecordingCloudStore();
+    final service = OutboxSyncService(
+      database: database,
+      notes: repository,
+      cloud: cloud,
+    );
+    final note = _note();
+    await repository.save(note);
+    await service.syncPending();
+
+    await repository.delete(note.id);
+    await service.syncPending();
+
+    expect(cloud.deletedAtByNote[note.id], isA<DateTime>());
+  });
+
+  test(
+    'pulls a newer cloud note without adding it to the local outbox',
+    () async {
+      final database = await openSmartNoteDatabase(
+        factory: databaseFactoryFfi,
+        path: inMemoryDatabasePath,
+      );
+      addTearDown(database.close);
+      final repository = SqliteNoteRepository(database);
+      final cloud = _RecordingCloudStore(
+        remoteNotes: [
+          {
+            'id': 'remote-note',
+            'title': 'Từ cloud',
+            'body': 'Đồng bộ hai chiều',
+            'kind': 'text',
+            'is_favorite': false,
+            'color_key': 'sage',
+            'tags': ['Cloud'],
+            'image_paths': <String>[],
+            'checklist': <Map<String, Object?>>[],
+            'created_at': '2026-08-10T08:00:00.000Z',
+            'updated_at': '2026-08-10T09:00:00.000Z',
+            'deleted_at': null,
+          },
+        ],
+      );
+      final service = OutboxSyncService(
+        database: database,
+        notes: repository,
+        cloud: cloud,
+      );
+
+      await service.syncPending();
+
+      expect((await database.query('notes')).single['title'], 'Từ cloud');
+      expect(await database.query('sync_outbox'), isEmpty);
+    },
+  );
 }
 
 class _RecordingCloudStore implements CloudNoteStore {
-  _RecordingCloudStore({this.shouldFail = false});
+  _RecordingCloudStore({this.shouldFail = false, this.remoteNotes = const []});
 
   final bool shouldFail;
+  final List<Map<String, Object?>> remoteNotes;
   final List<Map<String, Object?>> upserts = [];
+  final Map<String, DateTime?> deletedAtByNote = {};
 
   @override
-  Future<void> delete(String noteId) async {
+  Future<void> delete(String noteId, {DateTime? deletedAt}) async {
     if (shouldFail) throw Exception('offline');
+    deletedAtByNote[noteId] = deletedAt;
   }
 
   @override
   Future<void> upsert(Map<String, Object?> note) async {
     if (shouldFail) throw Exception('offline');
     upserts.add(note);
+  }
+
+  @override
+  Future<List<Map<String, Object?>>> fetchNotes({
+    DateTime? updatedAfter,
+  }) async {
+    if (shouldFail) throw Exception('offline');
+    return remoteNotes;
   }
 }
 

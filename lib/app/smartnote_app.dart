@@ -8,18 +8,38 @@ import '../features/notes/presentation/home_screen.dart';
 import '../features/notes/presentation/library_screens.dart';
 import '../features/notes/presentation/note_detail_screen.dart';
 import '../features/notes/presentation/note_editor_screen.dart';
+import '../features/notes/presentation/trash_screen.dart';
+import '../features/export/presentation/export_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/settings/data/app_settings_repository.dart';
+import '../features/auth/data/sync_auth_service.dart';
+import '../features/auth/presentation/auth_screen.dart';
+import '../features/security/data/pin_lock_service.dart';
+import '../features/security/presentation/security_screen.dart';
+import '../features/reminders/data/local_notification_scheduler.dart';
+import '../features/reminders/domain/note_reminder.dart';
 import 'app_theme.dart';
 import 'app_keys.dart';
 import 'providers.dart';
 import '../l10n/app_localizations.dart';
 
 class SmartNoteApp extends StatelessWidget {
-  const SmartNoteApp({super.key, required this.repository, this.settingsStore});
+  const SmartNoteApp({
+    super.key,
+    required this.repository,
+    this.settingsStore,
+    this.authService,
+    this.pinLockService,
+    this.reminderRepository,
+    this.reminderScheduler,
+  });
 
   final NoteRepository repository;
   final AppSettingsStore? settingsStore;
+  final SyncAuthService? authService;
+  final PinLockService? pinLockService;
+  final ReminderRepository? reminderRepository;
+  final ReminderScheduler? reminderScheduler;
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +48,14 @@ class SmartNoteApp extends StatelessWidget {
         noteRepositoryProvider.overrideWithValue(repository),
         if (settingsStore != null)
           appSettingsStoreProvider.overrideWithValue(settingsStore!),
+        if (authService != null)
+          syncAuthServiceProvider.overrideWithValue(authService),
+        if (pinLockService != null)
+          pinLockServiceProvider.overrideWithValue(pinLockService),
+        if (reminderRepository != null)
+          reminderRepositoryProvider.overrideWithValue(reminderRepository),
+        if (reminderScheduler != null)
+          reminderSchedulerProvider.overrideWithValue(reminderScheduler),
       ],
       child: const _SmartNoteRouterApp(),
     );
@@ -65,6 +93,16 @@ class _SmartNoteRouterAppState extends ConsumerState<_SmartNoteRouterApp> {
         builder: (context, state) =>
             const AppShell(selectedIndex: 3, child: SettingsScreen()),
       ),
+      GoRoute(
+        path: '/security',
+        builder: (context, state) => const SecurityScreen(),
+      ),
+      GoRoute(path: '/auth', builder: (context, state) => const AuthScreen()),
+      GoRoute(
+        path: '/export',
+        builder: (context, state) => const ExportScreen(),
+      ),
+      GoRoute(path: '/trash', builder: (context, state) => const TrashScreen()),
       GoRoute(
         path: '/notes/:id',
         builder: (context, state) =>

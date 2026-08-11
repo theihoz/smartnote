@@ -10,6 +10,10 @@ import 'features/sync/data/cloud_note_store.dart';
 import 'features/sync/data/outbox_sync_service.dart';
 import 'features/sync/data/supabase_config.dart';
 import 'features/settings/data/app_settings_repository.dart';
+import 'features/auth/data/sync_auth_service.dart';
+import 'features/security/data/pin_lock_service.dart';
+import 'features/reminders/data/local_notification_scheduler.dart';
+import 'features/reminders/data/sqlite_reminder_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +22,9 @@ Future<void> main() async {
   final settingsStore = AppSettingsRepository(preferences);
   final database = await openSmartNoteDatabase();
   final repository = SqliteNoteRepository(database);
+  final reminderScheduler = LocalNotificationScheduler();
+  await reminderScheduler.initialize();
+  SyncAuthService? authService;
   await _seedDemoNotes(repository);
 
   final config = SupabaseConfig.fromEnvironment();
@@ -28,20 +35,29 @@ Future<void> main() async {
         publishableKey: config.publishableKey,
       );
       final client = Supabase.instance.client;
-      if (client.auth.currentSession == null) {
-        await client.auth.signInAnonymously();
+      authService = SupabaseSyncAuthService(client);
+      if (client.auth.currentSession != null) {
+        await OutboxSyncService(
+          database: database,
+          notes: repository,
+          cloud: SupabaseCloudNoteStore(client),
+        ).syncPending();
       }
-      await OutboxSyncService(
-        database: database,
-        notes: repository,
-        cloud: SupabaseCloudNoteStore(client),
-      ).syncPending();
     } catch (_) {
       // Local SQLite remains fully functional when cloud is unavailable.
     }
   }
 
-  runApp(SmartNoteApp(repository: repository, settingsStore: settingsStore));
+  runApp(
+    SmartNoteApp(
+      repository: repository,
+      settingsStore: settingsStore,
+      authService: authService,
+      pinLockService: PinLockService(preferences),
+      reminderRepository: SqliteReminderRepository(database),
+      reminderScheduler: reminderScheduler,
+    ),
+  );
 }
 
 Future<void> _seedDemoNotes(SqliteNoteRepository repository) async {

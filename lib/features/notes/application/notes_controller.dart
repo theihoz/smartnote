@@ -127,6 +127,15 @@ class NotesController extends StateNotifier<NotesState> {
     return note;
   }
 
+  Future<void> setLocked(String id, bool isLocked) async {
+    final note = await _repository.getById(id);
+    if (note == null) return;
+    await _repository.save(
+      note.copyWith(isLocked: isLocked, updatedAt: _now()),
+    );
+    await load();
+  }
+
   Future<bool> undo() async {
     final entry = _undoEntry;
     if (entry == null || _isUndoExpired) {
