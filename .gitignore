@@ -46,9 +46,15 @@ app.*.map.json
 /android/build/
 
 # Local development tools and generated design state
+.superdesign/
 .superpowers/
 .vscode/
 devtools_options.yaml
+
+# Local-only project artifacts
+/download_site/
+/supabase/migrations/
+/test/
 
 # Environment files and sensitive signing material
 .env
