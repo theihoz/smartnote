@@ -1,29 +1,35 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppTheme {
-  static const canvas = Color(0xFFFDFCF8);
-  static const indigo = Color(0xFF5A5791);
+  static const canvas = Color(0xFFFFF8F6);
+  static const indigo = Color(0xFF423F78);
   static const lavender = Color(0xFFEFEDF4);
-  static const coral = Color(0xFFE58F89);
-  static const peach = Color(0xFFFFE2DE);
-  static const sage = Color(0xFFDCE9DE);
-  static const ink = Color(0xFF292524);
-  static const muted = Color(0xFF78716C);
+  static const coral = Color(0xFF904A46);
+  static const peach = Color(0xFFFFDAD7);
+  static const sage = Color(0xFFE3E1E8);
+  static const ink = Color(0xFF1E1B1A);
+  static const muted = Color(0xFF47464F);
+  static const surfaceContainerLow = Color(0xFFFBF2F0);
+  static const surfaceContainerHigh = Color(0xFFEFE6E4);
 
   static ThemeData get light {
     final scheme =
         ColorScheme.fromSeed(
           seedColor: indigo,
           brightness: Brightness.light,
-          surface: Colors.white,
+          surface: canvas,
         ).copyWith(
           primary: indigo,
-          primaryContainer: lavender,
+          primaryContainer: const Color(0xFF5A5791),
+          onPrimaryContainer: const Color(0xFFD6D3FF),
           secondary: coral,
-          secondaryContainer: peach,
+          secondaryContainer: const Color(0xFFFEA49D),
           tertiaryContainer: sage,
-          surfaceContainerLowest: canvas,
-          outline: const Color(0xFFD8D1C7),
+          surfaceContainerLowest: Colors.white,
+          surfaceContainerLow: surfaceContainerLow,
+          surfaceContainerHigh: surfaceContainerHigh,
+          outline: const Color(0xFF787680),
+          outlineVariant: const Color(0xFFC8C5D1),
         );
     return _base(scheme).copyWith(scaffoldBackgroundColor: canvas);
   }
@@ -31,19 +37,20 @@ abstract final class AppTheme {
   static ThemeData get dark {
     final scheme =
         ColorScheme.fromSeed(
-          seedColor: const Color(0xFFC8C3F2),
+          seedColor: const Color(0xFFC4C0FF),
           brightness: Brightness.dark,
         ).copyWith(
-          primary: const Color(0xFFC8C3F2),
-          primaryContainer: const Color(0xFF403D70),
-          secondary: const Color(0xFFFFB7B2),
-          surface: const Color(0xFF292624),
-          surfaceContainerLowest: const Color(0xFF1E1C1A),
-          outline: const Color(0xFF746C65),
+          primary: const Color(0xFFC4C0FF),
+          primaryContainer: const Color(0xFF434078),
+          secondary: const Color(0xFFFFB3AE),
+          surface: const Color(0xFF1E1B1A),
+          surfaceContainerLowest: const Color(0xFF171514),
+          surfaceContainerLow: const Color(0xFF292624),
+          outline: const Color(0xFF938F99),
         );
     return _base(
       scheme,
-    ).copyWith(scaffoldBackgroundColor: const Color(0xFF1E1C1A));
+    ).copyWith(scaffoldBackgroundColor: const Color(0xFF1E1B1A));
   }
 
   static ThemeData _base(ColorScheme scheme) {
@@ -51,12 +58,15 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       fontFamily: 'Outfit',
-      cardTheme: const CardThemeData(
+      cardTheme: CardThemeData(
         elevation: 0,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
         ),
+        color: scheme.brightness == Brightness.light
+            ? lavender.withValues(alpha: 0.8)
+            : scheme.surfaceContainerLow,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -67,7 +77,7 @@ abstract final class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        height: 68,
+        height: 72,
         indicatorColor: scheme.primaryContainer,
         labelTextStyle: const WidgetStatePropertyAll(
           TextStyle(
@@ -80,3 +90,4 @@ abstract final class AppTheme {
     );
   }
 }
+

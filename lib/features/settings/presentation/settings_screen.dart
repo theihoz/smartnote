@@ -1,7 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:async';
 
 import '../../../app/providers.dart';
 import '../../../l10n/app_localizations.dart';
@@ -17,92 +18,156 @@ class SettingsScreen extends ConsumerWidget {
     final locale = ref.watch(localeProvider);
     final l10n = AppLocalizations.of(context);
     final supabaseEnabled = SupabaseConfig.fromEnvironment() != null;
+    final theme = Theme.of(context);
 
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(18),
         children: [
+          // Header section
           Text(
             l10n.settings,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+            style: theme.textTheme.headlineLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
           ),
-          const SizedBox(height: 20),
-          _Section(
-            title: l10n.themeSection,
+          const SizedBox(height: 4),
+          Text(
+            'Manage your workspace preferences, security, and data.',
+            style: TextStyle(color: theme.colorScheme.outline),
+          ),
+          const SizedBox(height: 24),
+
+          // Security & Sync Bento Card
+          _BentoCard(
+            title: 'Security & Sync',
+            icon: Icons.shield_rounded,
+            iconColor: theme.colorScheme.primary,
             children: [
               ListTile(
-                leading: const Icon(Icons.lock_outline_rounded),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHigh,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.lock_rounded, size: 20),
+                ),
                 title: Text(
-                  featureText(context, vi: 'Khóa ghi chú', en: 'Note lock'),
+                  featureText(context, vi: 'Khóa ghi chú & PIN', en: 'Security & PIN Lock'),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 subtitle: Text(
                   featureText(
                     context,
-                    vi: 'PIN chung 4–6 số, chống thử sai',
-                    en: 'One 4–6 digit PIN with retry protection',
+                    vi: 'Yêu cầu mã PIN 4–6 số khi mở ứng dụng',
+                    en: 'Require PIN to open SmartNote',
                   ),
                 ),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => context.push('/security'),
               ),
+              const Divider(indent: 56, height: 1),
               ListTile(
-                leading: const Icon(Icons.account_circle_outlined),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHigh,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.cloud_sync_rounded, size: 20),
+                ),
                 title: Text(
                   featureText(
                     context,
-                    vi: 'Tài khoản đồng bộ',
-                    en: 'Sync account',
+                    vi: 'Tài khoản & Đồng bộ Cloud',
+                    en: 'Cloud Sync & Supabase Auth',
                   ),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 subtitle: Text(
-                  featureText(
-                    context,
-                    vi: 'Đăng nhập bằng email và mật khẩu',
-                    en: 'Sign in with email and password',
-                  ),
+                  supabaseEnabled ? l10n.cloudReady : l10n.cloudUnavailable,
                 ),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push('/auth'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.brightness_6_outlined),
-                title: Text(l10n.themeMode),
-                subtitle: Text(switch (themeMode) {
-                  ThemeMode.light => l10n.light,
-                  ThemeMode.dark => l10n.dark,
-                  _ => l10n.system,
-                }),
-                trailing: DropdownButton<ThemeMode>(
-                  value: themeMode,
-                  onChanged: (value) {
-                    if (value != null) {
-                      ref.read(themeModeProvider.notifier).state = value;
-                      unawaited(
-                        ref.read(appSettingsStoreProvider).saveThemeMode(value),
-                      );
-                    }
-                  },
-                  items: [
-                    DropdownMenuItem(
-                      value: ThemeMode.system,
-                      child: Text(l10n.system),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        supabaseEnabled ? 'Active' : 'Offline',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
-                    DropdownMenuItem(
-                      value: ThemeMode.light,
-                      child: Text(l10n.light),
-                    ),
-                    DropdownMenuItem(
-                      value: ThemeMode.dark,
-                      child: Text(l10n.dark),
-                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right_rounded),
                   ],
                 ),
+                onTap: () => context.push('/auth'),
               ),
+            ],
+          ),
+          const SizedBox(height: 18),
+
+          // Appearance Bento Card
+          _BentoCard(
+            title: 'Appearance',
+            icon: Icons.palette_rounded,
+            iconColor: theme.colorScheme.secondary,
+            children: [
               ListTile(
-                leading: const Icon(Icons.language_rounded),
-                title: Text(l10n.language),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHigh,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    themeMode == ThemeMode.dark
+                        ? Icons.dark_mode_rounded
+                        : Icons.light_mode_rounded,
+                    size: 20,
+                  ),
+                ),
+                title: Text(
+                  l10n.themeMode,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text(
+                  themeMode == ThemeMode.dark ? 'Currently Dark' : 'Currently Light',
+                ),
+                trailing: Switch(
+                  value: themeMode == ThemeMode.dark,
+                  onChanged: (isDark) {
+                    final newMode = isDark ? ThemeMode.dark : ThemeMode.light;
+                    ref.read(themeModeProvider.notifier).state = newMode;
+                    unawaited(
+                      ref.read(appSettingsStoreProvider).saveThemeMode(newMode),
+                    );
+                  },
+                ),
+              ),
+              const Divider(indent: 56, height: 1),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHigh,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.language_rounded, size: 20),
+                ),
+                title: Text(
+                  l10n.language,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
                 trailing: SegmentedButton<String>(
                   segments: const [
                     ButtonSegment(value: 'vi', label: Text('VI')),
@@ -124,100 +189,144 @@ class SettingsScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 18),
-          _Section(
-            title: l10n.storageSection,
+
+          // Data Management Bento Card
+          _BentoCard(
+            title: 'Data Management',
+            icon: Icons.storage_rounded,
+            iconColor: theme.colorScheme.primary,
             children: [
               ListTile(
-                leading: Icon(
-                  supabaseEnabled
-                      ? Icons.cloud_done_outlined
-                      : Icons.cloud_off_outlined,
-                ),
-                title: Text(l10n.cloudSync),
-                subtitle: Text(
-                  supabaseEnabled ? l10n.cloudReady : l10n.cloudUnavailable,
-                ),
-                trailing: FilledButton.tonal(
-                  onPressed: supabaseEnabled ? () {} : null,
-                  child: Text(l10n.sync),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.ios_share_rounded),
-                title: Text(
-                  featureText(context, vi: 'Xuất ghi chú', en: 'Export notes'),
-                ),
-                subtitle: Text(
-                  featureText(
-                    context,
-                    vi: 'Chọn nhiều ghi chú, PDF hoặc Markdown',
-                    en: 'Select multiple notes as PDF or Markdown',
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHigh,
+                    shape: BoxShape.circle,
                   ),
+                  child: const Icon(Icons.download_rounded, size: 20),
                 ),
+                title: Text(
+                  featureText(context, vi: 'Xuất dữ liệu', en: 'Export Data'),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: const Text('PDF / Markdown / JSON'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => context.push('/export'),
               ),
+              const Divider(indent: 56, height: 1),
               ListTile(
-                leading: const Icon(Icons.delete_outline_rounded),
-                title: Text(featureText(context, vi: 'Thùng rác', en: 'Trash')),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.errorContainer.withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.delete_rounded,
+                    size: 20,
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+                title: Text(
+                  featureText(context, vi: 'Thùng rác', en: 'Trash Bin'),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.error,
+                  ),
+                ),
                 subtitle: Text(
                   featureText(
                     context,
-                    vi: 'Khôi phục ghi chú trong vòng 30 ngày',
+                    vi: 'Khôi phục ghi chú trong 30 ngày',
                     en: 'Restore notes within 30 days',
                   ),
                 ),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => context.push('/trash'),
               ),
-              ListTile(
-                leading: Icon(Icons.storage_rounded),
-                title: Text(l10n.localStorage),
-                subtitle: Text(l10n.localStorageDescription),
-                trailing: Icon(Icons.check_circle_rounded, color: Colors.green),
-              ),
             ],
           ),
-          const SizedBox(height: 18),
-          _Section(
-            title: l10n.about,
-            children: [
-              ListTile(
-                leading: Icon(Icons.info_outline_rounded),
-                title: const Text('SmartNote'),
-                subtitle: Text(l10n.version),
-              ),
-            ],
+          const SizedBox(height: 32),
+
+          // Version & Branding
+          Center(
+            child: Column(
+              children: [
+                Text(
+                  'SmartNote',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'VERSION 1.0.0 • BÀI GIỮA KỲ',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.outline,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ],
+            ),
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.children});
+class _BentoCard extends StatelessWidget {
+  const _BentoCard({
+    required this.title,
+    required this.icon,
+    required this.iconColor,
+    required this.children,
+  });
 
   final String title;
+  final IconData icon;
+  final Color iconColor;
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 12, bottom: 8),
-          child: Text(
-            title,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w700,
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: iconColor),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-        Card(child: Column(children: children)),
-      ],
+          ...children,
+        ],
+      ),
     );
   }
 }

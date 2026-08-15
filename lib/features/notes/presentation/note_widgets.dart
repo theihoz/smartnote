@@ -16,8 +16,15 @@ class NoteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     return Card(
       clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
       child: InkWell(
         onTap: () => context.push('/notes/${note.id}'),
         child: Padding(
@@ -25,76 +32,30 @@ class NoteCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (note.imagePaths.isNotEmpty) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    height: 70,
-                    width: double.infinity,
-                    child: _NoteImage(path: note.imagePaths.first),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-              Text(
-                note.title.isEmpty ? l10n.untitled : note.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 6),
-              if (note.kind == NoteKind.checklist)
-                _ChecklistPreview(note: note)
-              else
-                Text(
-                  note.body,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: AppTheme.muted),
-                ),
-              const SizedBox(height: 8),
-              if (note.tags.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 5,
-                  runSpacing: 5,
-                  children: note.tags
-                      .take(2)
-                      .map(
-                        (tag) => Chip(
-                          visualDensity: VisualDensity.compact,
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          side: BorderSide.none,
-                          backgroundColor: AppTheme.lavender,
-                          label: Text(
-                            tag,
-                            style: const TextStyle(
-                              color: AppTheme.indigo,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
-              const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(
-                    child: Text(
-                      _relativeDate(context, note.updatedAt),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelSmall?.copyWith(color: AppTheme.muted),
+                  if (note.tags.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer.withValues(
+                          alpha: 0.3,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        note.tags.first,
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
-                  ),
+                  const Spacer(),
                   IconButton(
                     tooltip: l10n.favorite,
                     visualDensity: VisualDensity.compact,
@@ -106,6 +67,58 @@ class NoteCard extends StatelessWidget {
                       color: note.isFavorite ? AppTheme.coral : AppTheme.muted,
                       size: 20,
                     ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              if (note.imagePaths.isNotEmpty) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    height: 65,
+                    width: double.infinity,
+                    child: _NoteImage(path: note.imagePaths.first),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              Text(
+                note.title.isEmpty ? l10n.untitled : note.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+              const SizedBox(height: 4),
+              if (note.kind == NoteKind.checklist)
+                _ChecklistPreview(note: note)
+              else
+                Text(
+                  note.body,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.muted,
+                    fontSize: 13,
+                  ),
+                ),
+              const Spacer(),
+              Row(
+                children: [
+                  Text(
+                    _relativeDate(context, note.updatedAt),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppTheme.muted,
+                      fontSize: 11,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    Icons.more_horiz_rounded,
+                    size: 18,
+                    color: AppTheme.muted.withValues(alpha: 0.6),
                   ),
                 ],
               ),
