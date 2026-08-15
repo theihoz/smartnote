@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartNote Architecture Overview</title>
+<style>
+:root{--data:#4299e1;--proc:#ed8936;--svc:#9f7aea;--ok:#48bb78;--ink:#1f2937;--muted:#64748b;--bg:#f8fafc;--card:#fff}
+*{box-sizing:border-box} body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);margin:0}
+main{max-width:1200px;margin:auto;padding:20px}.hero{background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:34px;border-radius:18px;margin:10px 0 28px}
+.hero h1{margin:0 0 8px;font-size:34px}.hero p{margin:0;opacity:.92}.section{background:var(--card);margin:24px 0;padding:24px;border-radius:16px;box-shadow:0 8px 30px rgba(15,23,42,.06)}
+h2{margin-top:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.card{border:1px solid #e2e8f0;border-radius:12px;padding:16px}
+.badge{display:inline-block;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:700}.data{background:#ebf8ff;color:#2b6cb0}.proc{background:#fffaf0;color:#c05621}.svc{background:#faf5ff;color:#6b46c1}.ok{background:#f0fff4;color:#2f855a}
+svg{max-width:100%;height:auto;background:#fcfcfd;border:1px solid #e2e8f0;border-radius:14px}.legend{font-size:13px;color:var(--muted)}
+.layer{border-left:6px solid;padding:16px 18px;margin:12px 0;border-radius:10px;background:#f8fafc}.l1{border-color:var(--data)}.l2{border-color:var(--proc)}.l3{border-color:var(--svc)}.l4{border-color:var(--ok)}
+code{background:#f1f5f9;padding:2px 6px;border-radius:5px}.small{font-size:13px;color:var(--muted)}
+</style></head><body><main>
+<header class="hero"><h1>SmartNote — Architecture Overview</h1><p>Flutter offline-first notes app with SQLite local persistence and optional Supabase synchronization.</p></header>
+<section class="section"><h2>1. Business Context</h2><div class="grid">
+<div class="card"><span class="badge data">Users</span><h3>Người dùng mobile</h3><p>Ghi chú nhanh, checklist, ảnh, tag, tìm kiếm và nhắc nhở.</p></div>
+<div class="card"><span class="badge proc">Objective</span><h3>Offline-first</h3><p>Đọc/ghi dữ liệu ngay cả khi không có Internet; cloud chỉ là lớp đồng bộ tùy chọn.</p></div>
+<div class="card"><span class="badge svc">Value</span><h3>Độ tin cậy</h3><p>Thao tác người dùng được lưu local trước, giảm phụ thuộc vào độ ổn định mạng.</p></div>
+<div class="card"><span class="badge ok">Outcome</span><h3>Trải nghiệm liên tục</h3><p>Ứng dụng phản hồi nhanh, hỗ trợ nhắc nhở, export và đa ngôn ngữ.</p></div>
+</div></section>
+<section class="section"><h2>2. Data Flow</h2>
+<svg viewBox="0 0 1100 420" role="img" aria-label="SmartNote data flow">
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#64748b"/></marker></defs>
+<rect x="40" y="145" width="180" height="110" rx="14" fill="#4299e1"/><text x="130" y="185" text-anchor="middle" fill="white" font-size="18" font-weight="700">Flutter UI</text><text x="130" y="215" text-anchor="middle" fill="white" font-size="14">User actions</text>
+<rect x="310" y="145" width="190" height="110" rx="14" fill="#ed8936"/><text x="405" y="185" text-anchor="middle" fill="white" font-size="18" font-weight="700">Application</text><text x="405" y="215" text-anchor="middle" fill="white" font-size="14">Riverpod / use cases</text>
+<rect x="590" y="80" width="190" height="110" rx="14" fill="#4299e1"/><text x="685" y="120" text-anchor="middle" fill="white" font-size="18" font-weight="700">SQLite</text><text x="685" y="150" text-anchor="middle" fill="white" font-size="14">smartnote.db</text>
+<rect x="590" y="245" width="190" height="110" rx="14" fill="#ed8936"/><text x="685" y="285" text-anchor="middle" fill="white" font-size="18" font-weight="700">Sync Outbox</text><text x="685" y="315" text-anchor="middle" fill="white" font-size="14">pending changes</text>
+<rect x="875" y="245" width="180" height="110" rx="14" fill="#48bb78"/><text x="965" y="285" text-anchor="middle" fill="white" font-size="18" font-weight="700">Supabase</text><text x="965" y="315" text-anchor="middle" fill="white" font-size="14">optional cloud</text>
+<path d="M220 200 L310 200" stroke="#64748b" stroke-width="3" marker-end="url(#a)"/><path d="M500 185 L590 145" stroke="#64748b" stroke-width="3" marker-end="url(#a)"/><path d="M500 220 L590 285" stroke="#64748b" stroke-width="3" marker-end="url(#a)"/><path d="M780 300 L875 300" stroke="#64748b" stroke-width="3" marker-end="url(#a)"/>
+<text x="265" y="185" text-anchor="middle" font-size="12" fill="#475569">events</text><text x="545" y="140" text-anchor="middle" font-size="12" fill="#475569">CRUD</text><text x="825" y="285" text-anchor="middle" font-size="12" fill="#475569">retry / push</text>
+</svg><p class="legend">Màu theo skill: xanh dương = data, cam = processing, tím = service/application, xanh lá = successful output/cloud.</p></section>
+<section class="section"><h2>3. Processing Pipeline</h2>
+<svg viewBox="0 0 1100 260"><defs><marker id="b" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#64748b"/></marker></defs>
+<g font-size="15" font-weight="700" text-anchor="middle" fill="white">
+<rect x="30" y="90" width="170" height="80" rx="12" fill="#4299e1"/><text x="115" y="137">1. User input</text>
+<rect x="245" y="90" width="170" height="80" rx="12" fill="#9f7aea"/><text x="330" y="137">2. Validate / state</text>
+<rect x="460" y="90" width="170" height="80" rx="12" fill="#ed8936"/><text x="545" y="137">3. Save SQLite</text>
+<rect x="675" y="90" width="170" height="80" rx="12" fill="#ed8936"/><text x="760" y="125">4. Enqueue</text><text x="760" y="148">sync change</text>
+<rect x="890" y="90" width="170" height="80" rx="12" fill="#48bb78"/><text x="975" y="125">5. Push cloud</text><text x="975" y="148">when available</text>
+</g>
+<g stroke="#64748b" stroke-width="3" marker-end="url(#b)"><path d="M200 130 L245 130"/><path d="M415 130 L460 130"/><path d="M630 130 L675 130"/><path d="M845 130 L890 130"/></g></svg></section>
+<section class="section"><h2>4. Layered System Architecture</h2>
+<div class="layer l1"><b>Presentation / UI</b><br>Flutter screens, widgets, routing via <code>go_router</code>, localization and user interaction.</div>
+<div class="layer l2"><b>Application</b><br>Riverpod state + orchestration of note use cases, reminders, export and sync actions.</div>
+<div class="layer l3"><b>Domain</b><br><code>Note</code>, <code>ChecklistItem</code>, query/validator and repository contracts.</div>
+<div class="layer l1"><b>Data</b><br>SQLite repositories, <code>smartnote.db</code>, drafts, versions, reminder state and sync outbox.</div>
+<div class="layer l4"><b>External Services</b><br>Optional Supabase cloud synchronization and external REST source for inspiration content.</div>
+</section>
+<section class="section"><h2>5. Features</h2><div class="grid">
+<div class="card"><h3>Notes</h3><p>Text/checklist, edit, soft delete, favorites, colors.</p></div><div class="card"><h3>Organization</h3><p>Tags, search/filter, images.</p></div><div class="card"><h3>Productivity</h3><p>Reminders, drafts, version history.</p></div><div class="card"><h3>Security</h3><p>Lock state and security feature module.</p></div><div class="card"><h3>Export</h3><p>PDF generation and system share.</p></div><div class="card"><h3>Experience</h3><p>Light/dark theme and Vietnamese/English localization.</p></div>
+</div></section>
+<section class="section"><h2>6. Deployment & Runtime</h2><div class="grid"><div class="card"><h3>Client</h3><p>Flutter mobile application. Local runtime requires SQLite database and app assets.</p></div><div class="card"><h3>Cloud (optional)</h3><p>Supabase project/configuration for synchronization. Offline usage does not require cloud availability.</p></div><div class="card"><h3>Workflow</h3><p>Build Flutter app → initialize local DB → user operates offline → sync service pushes outbox when configured.</p></div></div>
+<p class="small">Architecture derived from SmartNote code structure, pubspec dependencies, Note domain model, SQLite schema and sync module.</p></section>
+</main></body></html>
