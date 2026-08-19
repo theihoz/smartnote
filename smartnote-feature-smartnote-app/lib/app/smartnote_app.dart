@@ -72,6 +72,15 @@ class _SmartNoteRouterApp extends ConsumerStatefulWidget {
 
 class _SmartNoteRouterAppState extends ConsumerState<_SmartNoteRouterApp> {
   late final GoRouter _router = GoRouter(
+    initialLocation: '/auth',
+    redirect: (context, state) {
+      final isSignedIn = ref.read(syncAuthServiceProvider).currentEmail != null;
+      final isAuthRoute = state.matchedLocation == '/auth';
+
+      if (!isSignedIn && !isAuthRoute) return '/auth';
+      if (isSignedIn && isAuthRoute) return '/';
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/',
