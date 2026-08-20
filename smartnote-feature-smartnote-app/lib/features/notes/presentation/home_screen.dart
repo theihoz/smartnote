@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/app_theme.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../l10n/feature_text.dart';
 import '../domain/note_query.dart';
 import 'note_widgets.dart';
 
@@ -17,6 +18,7 @@ class HomeScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final notes = state.visibleNotes;
     final activeTag = state.query.tag;
+    final userEmail = ref.watch(syncAuthServiceProvider).currentEmail;
     final taskCount = state.allNotes
         .expand((note) => note.checklist)
         .where((item) => !item.isDone)
@@ -35,25 +37,50 @@ class HomeScreen extends ConsumerWidget {
                   sliver: SliverToBoxAdapter(
                     child: Row(
                       children: [
-                        const CircleAvatar(
+                        CircleAvatar(
                           radius: 18,
                           backgroundColor: AppTheme.peach,
-                          child: Icon(
-                            Icons.person_rounded,
-                            size: 20,
-                            color: AppTheme.coral,
+                          child: Text(
+                            userEmail?.isNotEmpty == true
+                                ? userEmail![0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              color: AppTheme.coral,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Text(
-                          'SmartNote',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w800,
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'SmartNote',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                               ),
+                              Text(
+                                userEmail ??
+                                    featureText(
+                                      context,
+                                      vi: 'Tài khoản của bạn',
+                                      en: 'Your account',
+                                    ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
-                        const Spacer(),
                         const _SyncBadge(),
                       ],
                     ),
