@@ -15,49 +15,49 @@ void main() {
     );
   });
 
-  test('upsert sends device id and maps the existing cloud payload', () async {
-    late http.Request recorded;
-    final client = MockClient((request) async {
-      recorded = request;
-      return http.Response(
-        jsonEncode({
-          'data': jsonDecode(request.body),
-          'meta': {'requestId': 'request-1'},
-        }),
-        200,
+  test(
+    'upsert sends bearer token and maps the existing cloud payload',
+    () async {
+      late http.Request recorded;
+      final client = MockClient((request) async {
+        recorded = request;
+        return http.Response(
+          jsonEncode({
+            'data': jsonDecode(request.body),
+            'meta': {'requestId': 'request-1'},
+          }),
+          200,
+        );
+      });
+      final store = RestCloudNoteStore(
+        client,
+        baseUrl: 'https://api.example.com',
+        accessToken: 'token-1',
       );
-    });
-    final store = RestCloudNoteStore(
-      client,
-      baseUrl: 'https://api.example.com',
-      deviceId: '11111111-1111-4111-8111-111111111111',
-    );
 
-    await store.upsert({
-      'id': '22222222-2222-4222-8222-222222222222',
-      'title': 'REST note',
-      'body': '',
-      'kind': 'text',
-      'checklist': const [
-        {'id': 'item-1', 'text': 'Task', 'is_done': true, 'position': 0},
-      ],
-      'tags': const [],
-      'image_paths': const [],
-      'is_favorite': false,
-      'is_locked': false,
-      'color_key': 'lavender',
-      'created_at': '2026-08-20T00:00:00.000Z',
-      'updated_at': '2026-08-20T00:00:00.000Z',
-    });
+      await store.upsert({
+        'id': '22222222-2222-4222-8222-222222222222',
+        'title': 'REST note',
+        'body': '',
+        'kind': 'text',
+        'checklist': const [
+          {'id': 'item-1', 'text': 'Task', 'is_done': true, 'position': 0},
+        ],
+        'tags': const [],
+        'image_paths': const [],
+        'is_favorite': false,
+        'is_locked': false,
+        'color_key': 'lavender',
+        'created_at': '2026-08-20T00:00:00.000Z',
+        'updated_at': '2026-08-20T00:00:00.000Z',
+      });
 
-    expect(recorded.method, 'PUT');
-    expect(
-      recorded.headers['x-device-id'],
-      '11111111-1111-4111-8111-111111111111',
-    );
-    expect(jsonDecode(recorded.body)['imagePaths'], const []);
-    expect(jsonDecode(recorded.body)['checklist'][0]['isDone'], isTrue);
-  });
+      expect(recorded.method, 'PUT');
+      expect(recorded.headers['authorization'], 'Bearer token-1');
+      expect(jsonDecode(recorded.body)['imagePaths'], const []);
+      expect(jsonDecode(recorded.body)['checklist'][0]['isDone'], isTrue);
+    },
+  );
 
   test('fetch maps REST notes back to the sync payload', () async {
     final client = MockClient(
@@ -90,7 +90,7 @@ void main() {
     final store = RestCloudNoteStore(
       client,
       baseUrl: 'https://api.example.com',
-      deviceId: '11111111-1111-4111-8111-111111111111',
+      accessToken: 'token-1',
     );
 
     final notes = await store.fetchNotes();

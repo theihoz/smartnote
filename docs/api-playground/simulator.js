@@ -6,10 +6,12 @@ const quotes = [
 ];
 
 export function createApiSimulator() {
-  const notesByDevice = new Map();
+  const notesByOwner = new Map();
+  const sessions = new Map();
+  const users = new Map();
 
   return {
-    request({ method = 'GET', path, deviceId, body }) {
+    request({ method = 'GET', path, token, body }) {
       const requestId = globalThis.crypto?.randomUUID?.() ?? '00000000-0000-4000-8000-000000000000';
       const success = (data, status = 200) => ({ status, body: { data, meta: { requestId } } });
       const failure = (status, code, message) => ({ status, body: { error: { code, message, requestId } } });
@@ -19,12 +21,34 @@ export function createApiSimulator() {
       if (method === 'GET' && url.pathname === '/v1/quotes/random') {
         return success(quotes[Math.floor(Math.random() * quotes.length)]);
       }
-      if (!uuidPattern.test(deviceId ?? '')) {
-        return failure(400, 'INVALID_DEVICE_ID', 'X-Device-Id must be a UUID.');
+      if (method === 'POST' && url.pathname === '/v1/auth/guest') {
+        if (!uuidPattern.test(body?.deviceId ?? '')) return failure(400, 'INVALID_DEVICE_ID', 'deviceId must be a UUID.');
+        const accessToken = `guest-${body.deviceId}`;
+        sessions.set(accessToken, body.deviceId);
+        return success({ accessToken, guestSecret: 'mock-guest-secret', expiresAt: '2099-01-01T00:00:00.000Z' });
+      }
+      if (method === 'POST' && url.pathname === '/v1/auth/register') {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body?.email ?? '') || (body?.password?.length ?? 0) < 8) {
+          return failure(400, 'INVALID_CREDENTIALS', 'Email or password is invalid.');
+        }
+        users.set(body.email, { password: body.password });
+        const accessToken = `user-${body.email}`;
+        sessions.set(accessToken, body.email);
+        return success({ user: { id: body.email, email: body.email }, accessToken, expiresAt: '2099-01-01T00:00:00.000Z' }, 201);
+      }
+      if (method === 'POST' && url.pathname === '/v1/auth/login') {
+        const user = users.get(body?.email);
+        if (!user || user.password !== body?.password) return failure(401, 'INVALID_LOGIN', 'Email or password is incorrect.');
+        const accessToken = `user-${body.email}`;
+        sessions.set(accessToken, body.email);
+        return success({ user: { id: body.email, email: body.email }, accessToken, expiresAt: '2099-01-01T00:00:00.000Z' });
       }
 
-      const notes = notesByDevice.get(deviceId) ?? new Map();
-      notesByDevice.set(deviceId, notes);
+      const owner = sessions.get(token);
+      if (!owner) return failure(401, 'UNAUTHORIZED', 'A valid access token is required.');
+
+      const notes = notesByOwner.get(owner) ?? new Map();
+      notesByOwner.set(owner, notes);
       if (method === 'GET' && url.pathname === '/v1/notes') {
         const updatedAfter = url.searchParams.get('updatedAfter');
         const values = [...notes.values()].filter(

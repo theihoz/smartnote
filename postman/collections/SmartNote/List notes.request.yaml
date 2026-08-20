@@ -3,7 +3,7 @@ id: 50368433-bd3b09cf-fd6c-4d25-a49f-cc656314246c
 url: "{{baseUrl}}/v1/notes"
 method: GET
 headers:
-  X-Device-Id: "{{deviceId}}"
+  Authorization: "Bearer {{guestToken}}"
 scripts:
   - type: afterResponse
     code: |-

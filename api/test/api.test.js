@@ -5,12 +5,19 @@ import { createApp } from '../src/app.js';
 
 let baseUrl;
 let server;
+let token;
 
 before(async () => {
   const app = createApp({ databasePath: ':memory:', log: () => {} });
   server = app.listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const response = await fetch(`${baseUrl}/v1/auth/guest`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ deviceId: '11111111-1111-4111-8111-111111111111' }),
+  });
+  token = (await response.json()).data.accessToken;
 });
 
 after(() => server?.close());
@@ -20,7 +27,7 @@ async function request(path, options = {}) {
     ...options,
     headers: {
       'content-type': 'application/json',
-      'x-device-id': '11111111-1111-4111-8111-111111111111',
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
@@ -54,7 +61,7 @@ test('allows the GitHub Pages playground without reflecting other origins', asyn
   assert.equal(response.status, 204);
   assert.match(
     response.headers.get('access-control-allow-headers'),
-    /X-Device-Id/i,
+    /Authorization/i,
   );
 
   response = await request('/health', {
@@ -98,22 +105,25 @@ test('upsert, pull and delete a note for one device', async () => {
   assert.ok(body.data[0].deletedAt);
 });
 
-test('device id isolates notes', async () => {
-  const response = await request('/v1/notes', {
-    headers: { 'x-device-id': '33333333-3333-4333-8333-333333333333' },
+test('another guest session is isolated', async () => {
+  let response = await fetch(`${baseUrl}/v1/auth/guest`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ deviceId: '33333333-3333-4333-8333-333333333333' }),
   });
+  const otherToken = (await response.json()).data.accessToken;
+  response = await request('/v1/notes', { headers: { authorization: `Bearer ${otherToken}` } });
   const body = await response.json();
   assert.deepEqual(body.data, []);
 });
 
-test('invalid device id returns a stable error envelope', async () => {
+test('invalid token returns a stable error envelope', async () => {
   const response = await request('/v1/notes', {
-    headers: { 'x-device-id': 'invalid' },
+    headers: { authorization: 'Bearer invalid' },
   });
   const body = await response.json();
 
-  assert.equal(response.status, 400);
-  assert.equal(body.error.code, 'INVALID_DEVICE_ID');
+  assert.equal(response.status, 401);
+  assert.equal(body.error.code, 'UNAUTHORIZED');
   assert.ok(body.error.requestId);
 });
 

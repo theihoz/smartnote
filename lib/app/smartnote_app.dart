@@ -16,6 +16,8 @@ import '../features/security/data/pin_lock_service.dart';
 import '../features/security/presentation/security_screen.dart';
 import '../features/reminders/data/local_notification_scheduler.dart';
 import '../features/reminders/domain/note_reminder.dart';
+import '../features/auth/application/auth_controller.dart';
+import '../features/auth/presentation/auth_screen.dart';
 import 'app_theme.dart';
 import 'app_keys.dart';
 import 'providers.dart';
@@ -30,6 +32,7 @@ class SmartNoteApp extends StatelessWidget {
     this.pinLockService,
     this.reminderRepository,
     this.reminderScheduler,
+    this.authController,
   });
 
   final NoteRepository repository;
@@ -38,6 +41,7 @@ class SmartNoteApp extends StatelessWidget {
   final PinLockService? pinLockService;
   final ReminderRepository? reminderRepository;
   final ReminderScheduler? reminderScheduler;
+  final AuthController? authController;
 
   @override
   Widget build(BuildContext context) {
@@ -53,15 +57,19 @@ class SmartNoteApp extends StatelessWidget {
         if (reminderScheduler != null)
           reminderSchedulerProvider.overrideWithValue(reminderScheduler),
       ],
-      child: _SmartNoteRouterApp(syncOnStartup: syncOnStartup),
+      child: _SmartNoteRouterApp(
+        syncOnStartup: syncOnStartup,
+        authController: authController,
+      ),
     );
   }
 }
 
 class _SmartNoteRouterApp extends ConsumerStatefulWidget {
-  const _SmartNoteRouterApp({this.syncOnStartup});
+  const _SmartNoteRouterApp({this.syncOnStartup, this.authController});
 
   final Future<Object?> Function()? syncOnStartup;
+  final AuthController? authController;
 
   @override
   ConsumerState<_SmartNoteRouterApp> createState() =>
@@ -79,7 +87,24 @@ class _SmartNoteRouterAppState extends ConsumerState<_SmartNoteRouterApp> {
   }
 
   late final GoRouter _router = GoRouter(
+    refreshListenable: widget.authController,
+    redirect: (context, state) {
+      if (widget.authController != null &&
+          widget.authController!.session == null &&
+          state.uri.path != '/auth') {
+        return '/auth';
+      }
+      return null;
+    },
     routes: [
+      GoRoute(
+        path: '/auth',
+        builder: (context, state) => widget.authController == null
+            ? const Scaffold(
+                body: Center(child: Text('Authentication is unavailable.')),
+              )
+            : AuthScreen(controller: widget.authController!),
+      ),
       GoRoute(
         path: '/',
         builder: (context, state) =>

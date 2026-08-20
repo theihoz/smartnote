@@ -1,0 +1,17 @@
+$kind: http-request
+id: 70368433-1111-4111-8111-111111111111
+url: "{{baseUrl}}/v1/auth/guest"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"deviceId":"{{deviceId}}"}'
+scripts:
+  - type: beforeRequest
+    code: pm.environment.set('deviceId', pm.variables.replaceIn('{{$guid}}'));
+  - type: afterResponse
+    code: |-
+      pm.test('guest session created', () => pm.response.to.have.status(200));
+      pm.environment.set('guestToken', pm.response.json().data.accessToken);
+order: 1100

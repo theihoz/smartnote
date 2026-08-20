@@ -4,7 +4,7 @@ url: "{{baseUrl}}/v1/notes/{{noteId}}"
 method: PUT
 headers:
   Content-Type: application/json
-  X-Device-Id: "{{deviceId}}"
+  Authorization: "Bearer {{guestToken}}"
 body:
   type: text
   content: |-

@@ -5,14 +5,22 @@ OpenAPI nằm tại `postman/specs/smartnote-api.openapi.yaml`.
 | Method | Path | Mô tả |
 |---|---|---|
 | GET | `/health` | Trạng thái API |
+| POST | `/v1/auth/guest` | Tạo/mở phiên Guest |
+| POST | `/v1/auth/register` | Đăng ký và đăng nhập ngay |
+| POST | `/v1/auth/login` | Đăng nhập |
+| POST | `/v1/auth/logout` | Đăng xuất |
+| GET | `/v1/auth/me` | Danh tính hiện tại |
+| PUT | `/v1/auth/password` | Đổi mật khẩu |
+| POST | `/v1/auth/claim-guest` | Gộp Guest vào tài khoản |
 | GET | `/v1/notes` | Danh sách ghi chú/tombstone |
 | GET | `/v1/notes/:id` | Một ghi chú |
 | PUT | `/v1/notes/:id` | Upsert idempotent |
 | DELETE | `/v1/notes/:id` | Soft-delete |
 | GET | `/v1/quotes/random` | Quote ngẫu nhiên |
 
-Endpoint ghi chú yêu cầu `X-Device-Id` là UUID. Response thành công có `data`
-và `meta.requestId`; lỗi có `error.code`, `error.message`, `error.requestId`.
+Endpoint ghi chú yêu cầu `Authorization: Bearer <token>`. Response thành công
+có `data` và `meta.requestId`; lỗi có `error.code`, `error.message`,
+`error.requestId`. Bản demo chỉ kiểm tra định dạng email, không xác minh quyền sở hữu email.
 
 ```powershell
 npm run postman:lint
@@ -26,4 +34,5 @@ Cloud workspace: `scara's Workspace`
 `force-sync`. Không commit Postman API key.
 
 Flutter log bằng tên `smartnote.api`; backend ghi JSON line. Cả hai chỉ ghi
-method, path, status, duration và request ID, không ghi nội dung ghi chú/PIN.
+method, path, status, duration, owner rút gọn và request ID; không ghi nội dung
+ghi chú, PIN, mật khẩu hoặc token.

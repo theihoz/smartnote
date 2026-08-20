@@ -1,0 +1,17 @@
+$kind: http-request
+id: 70368433-2222-4222-8222-222222222222
+url: "{{baseUrl}}/v1/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"email":"{{testEmail}}","password":"password-123"}'
+scripts:
+  - type: beforeRequest
+    code: pm.environment.set('testEmail', `postman-${Date.now()}@example.com`);
+  - type: afterResponse
+    code: |-
+      pm.test('account registered and signed in', () => pm.response.to.have.status(201));
+      pm.environment.set('accountToken', pm.response.json().data.accessToken);
+order: 1200

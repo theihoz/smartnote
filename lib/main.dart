@@ -4,8 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import 'package:sqflite/sqflite.dart';
 
 import 'app/smartnote_app.dart';
+import 'features/auth/application/auth_controller.dart';
+import 'features/auth/data/auth_api_client.dart';
+import 'features/auth/data/secure_auth_store.dart';
 import 'features/notes/data/smartnote_database.dart';
 import 'features/notes/data/sqlite_note_repository.dart';
 import 'features/notes/domain/note.dart';
@@ -20,15 +24,10 @@ import 'features/reminders/data/sqlite_reminder_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   final preferences = await SharedPreferences.getInstance();
   final settingsStore = AppSettingsRepository(preferences);
-  final database = await openSmartNoteDatabase();
-  final repository = SqliteNoteRepository(database);
   final reminderScheduler = LocalNotificationScheduler();
   await reminderScheduler.initialize();
-  await _seedDemoNotes(repository);
-
   const deviceIdKey = 'smartnote.device_id';
   var deviceId = preferences.getString(deviceIdKey);
   if (deviceId == null) {
@@ -36,17 +35,6 @@ Future<void> main() async {
     await preferences.setString(deviceIdKey, deviceId);
   }
   final config = ApiConfig.fromEnvironment();
-  final syncOnStartup = config == null
-      ? null
-      : () => OutboxSyncService(
-          database: database,
-          notes: repository,
-          cloud: RestCloudNoteStore(
-            LoggingHttpClient(http.Client()),
-            baseUrl: config.baseUrl,
-            deviceId: deviceId!,
-          ),
-        ).syncPending();
   if (config == null) {
     developer.log(
       'API_BASE_URL is not configured; running local-only.',
@@ -55,15 +43,174 @@ Future<void> main() async {
   }
 
   runApp(
-    SmartNoteApp(
-      repository: repository,
+    _SmartNoteHost(
+      preferences: preferences,
       settingsStore: settingsStore,
-      syncOnStartup: syncOnStartup,
-      pinLockService: PinLockService(preferences),
-      reminderRepository: SqliteReminderRepository(database),
       reminderScheduler: reminderScheduler,
+      deviceId: deviceId,
+      config: config,
     ),
   );
+}
+
+class _SmartNoteHost extends StatefulWidget {
+  const _SmartNoteHost({
+    required this.preferences,
+    required this.settingsStore,
+    required this.reminderScheduler,
+    required this.deviceId,
+    required this.config,
+  });
+
+  final SharedPreferences preferences;
+  final AppSettingsRepository settingsStore;
+  final LocalNotificationScheduler reminderScheduler;
+  final String deviceId;
+  final ApiConfig? config;
+
+  @override
+  State<_SmartNoteHost> createState() => _SmartNoteHostState();
+}
+
+class _SmartNoteHostState extends State<_SmartNoteHost> {
+  final store = SecureAuthStore();
+  final client = LoggingHttpClient(http.Client());
+  AuthController? auth;
+  _Runtime? runtime;
+  Object? loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      final session = await store.read();
+      final api = widget.config == null
+          ? null
+          : AuthApiClient(client, baseUrl: widget.config!.baseUrl);
+      final initialRuntime = await _createRuntime(session);
+      if (session != null && widget.config != null) {
+        await _sync(initialRuntime, session);
+      }
+      if (!mounted) return;
+      setState(() {
+        runtime = initialRuntime;
+        auth = AuthController(
+          api: api,
+          store: store,
+          deviceId: widget.deviceId,
+          session: session,
+          onSessionChanged: _switchSession,
+        );
+      });
+    } catch (error) {
+      if (mounted) setState(() => loadError = error);
+    }
+  }
+
+  Future<void> _switchSession(AuthSession? previous, AuthSession next) async {
+    final oldRuntime = runtime!;
+    if (previous != null && widget.config != null) {
+      final pushed = await _sync(oldRuntime, previous);
+      if (pushed.failed != 0) {
+        throw StateError(
+          'Không thể đồng bộ dữ liệu hiện tại trước khi chuyển tài khoản.',
+        );
+      }
+    }
+    final nextProfileKey = next.kind == AuthKind.user
+        ? next.profileId
+        : 'guest:${widget.deviceId}';
+    if (oldRuntime.profileKey == nextProfileKey) {
+      if (widget.config != null) await _sync(oldRuntime, next);
+      return;
+    }
+    if (previous?.kind == AuthKind.guest && next.kind == AuthKind.user) {
+      await auth!.api!.claimGuest(next.accessToken, previous!.accessToken);
+    }
+    final newRuntime = await _createRuntime(next);
+    final result = widget.config == null
+        ? const SyncResult(synced: 0, failed: 0)
+        : await _sync(newRuntime, next);
+    if (result.failed != 0) {
+      await newRuntime.database.close();
+      throw StateError(
+        'Không thể tải cache của tài khoản. Dữ liệu Guest vẫn được giữ nguyên.',
+      );
+    }
+    if (previous?.kind == AuthKind.guest && next.kind == AuthKind.user) {
+      await clearSmartNoteProfile(oldRuntime.database);
+    }
+    if (!mounted) return;
+    setState(() => runtime = newRuntime);
+    await oldRuntime.database.close();
+  }
+
+  Future<_Runtime> _createRuntime(AuthSession? session) async {
+    final profileKey = session?.kind == AuthKind.user
+        ? session!.profileId
+        : 'guest:${widget.deviceId}';
+    final database = await openSmartNoteProfileDatabase(profileKey);
+    final repository = SqliteNoteRepository(database);
+    if (session?.kind != AuthKind.user) await _seedDemoNotes(repository);
+    return _Runtime(profileKey, database, repository);
+  }
+
+  Future<SyncResult> _sync(_Runtime target, AuthSession session) {
+    return OutboxSyncService(
+      database: target.database,
+      notes: target.repository,
+      cloud: RestCloudNoteStore(
+        client,
+        baseUrl: widget.config!.baseUrl,
+        accessToken: session.accessToken,
+      ),
+    ).syncPending();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (loadError != null) {
+      return MaterialApp(
+        home: Scaffold(
+          body: Center(child: Text('Không thể mở SmartNote: $loadError')),
+        ),
+      );
+    }
+    if (runtime == null || auth == null) {
+      return const MaterialApp(
+        home: Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
+    }
+    return SmartNoteApp(
+      key: ValueKey(
+        '${auth!.session?.profileId ?? 'signed-out'}-${runtime.hashCode}',
+      ),
+      repository: runtime!.repository,
+      settingsStore: widget.settingsStore,
+      authController: auth,
+      pinLockService: PinLockService(widget.preferences),
+      reminderRepository: SqliteReminderRepository(runtime!.database),
+      reminderScheduler: widget.reminderScheduler,
+    );
+  }
+
+  @override
+  void dispose() {
+    client.close();
+    runtime?.database.close();
+    super.dispose();
+  }
+}
+
+class _Runtime {
+  const _Runtime(this.profileKey, this.database, this.repository);
+  final String profileKey;
+  final Database database;
+  final SqliteNoteRepository repository;
 }
 
 Future<void> _seedDemoNotes(SqliteNoteRepository repository) async {

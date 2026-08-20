@@ -1,0 +1,15 @@
+$kind: http-request
+id: 70368433-4444-4444-8444-444444444444
+url: "{{baseUrl}}/v1/auth/guest"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: '{"deviceId":"{{otherDeviceId}}"}'
+scripts:
+  - type: beforeRequest
+    code: pm.environment.set('otherDeviceId', pm.variables.replaceIn('{{$guid}}'));
+  - type: afterResponse
+    code: pm.environment.set('otherGuestToken', pm.response.json().data.accessToken);
+order: 3500

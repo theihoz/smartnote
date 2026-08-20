@@ -3,7 +3,7 @@ id: 50368433-ecdeb75f-b5cc-4bb3-8539-3ba3fdc9ea14
 url: "{{baseUrl}}/v1/notes/{{noteId}}"
 method: DELETE
 headers:
-  X-Device-Id: "{{deviceId}}"
+  Authorization: "Bearer {{guestToken}}"
 scripts:
   - type: afterResponse
     code: pm.test('delete creates tombstone', () => pm.expect(pm.response.json().data.deletedAt).to.be.a('string'));

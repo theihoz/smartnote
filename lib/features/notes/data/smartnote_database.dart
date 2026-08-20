@@ -20,6 +20,33 @@ Future<Database> openSmartNoteDatabase({
   );
 }
 
+Future<Database> openSmartNoteProfileDatabase(String? profileId) async {
+  if (profileId == null || profileId.startsWith('guest:')) {
+    return openSmartNoteDatabase();
+  }
+  final safeId = profileId.replaceAll(RegExp('[^a-zA-Z0-9_-]'), '_');
+  return openSmartNoteDatabase(
+    path: p.join(
+      await databaseFactory.getDatabasesPath(),
+      'smartnote_$safeId.db',
+    ),
+  );
+}
+
+Future<void> clearSmartNoteProfile(Database database) async {
+  await database.transaction((transaction) async {
+    for (final table in [
+      'sync_outbox',
+      'sync_state',
+      'note_drafts',
+      'notes',
+      'tags',
+    ]) {
+      await transaction.delete(table);
+    }
+  });
+}
+
 Future<void> _createSchema(Database database, int version) async {
   await database.execute('''
     CREATE TABLE notes (

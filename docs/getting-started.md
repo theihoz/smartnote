@@ -8,7 +8,7 @@ npm run api:start
 ```
 
 API mặc định chạy tại `http://127.0.0.1:8787`. Biến `PORT` thay đổi cổng.
-Database runtime nằm trong `api/data/` và không được commit.
+Database runtime nằm trong `api/data/` .
 
 ## Flutter
 

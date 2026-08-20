@@ -17,12 +17,15 @@ const sampleNote = {
 };
 
 const endpoints = [
-  { name: 'Health', method: 'GET', path: '/health', device: false },
-  { name: 'List notes', method: 'GET', path: '/v1/notes', device: true },
-  { name: 'Get note', method: 'GET', path: '/v1/notes/{noteId}', device: true },
-  { name: 'Upsert note', method: 'PUT', path: '/v1/notes/{noteId}', device: true, body: sampleNote },
-  { name: 'Delete note', method: 'DELETE', path: '/v1/notes/{noteId}', device: true },
-  { name: 'Random quote', method: 'GET', path: '/v1/quotes/random', device: false },
+  { name: 'Health', method: 'GET', path: '/health' },
+  { name: 'Create Guest', method: 'POST', path: '/v1/auth/guest', body: { deviceId: '' } },
+  { name: 'Register', method: 'POST', path: '/v1/auth/register', body: { email: 'demo@example.com', password: 'password-123' } },
+  { name: 'Login', method: 'POST', path: '/v1/auth/login', body: { email: 'demo@example.com', password: 'password-123' } },
+  { name: 'List notes', method: 'GET', path: '/v1/notes', auth: true },
+  { name: 'Get note', method: 'GET', path: '/v1/notes/{noteId}', auth: true },
+  { name: 'Upsert note', method: 'PUT', path: '/v1/notes/{noteId}', auth: true, body: sampleNote },
+  { name: 'Delete note', method: 'DELETE', path: '/v1/notes/{noteId}', auth: true },
+  { name: 'Random quote', method: 'GET', path: '/v1/quotes/random' },
 ];
 
 const simulator = createApiSimulator();
@@ -52,7 +55,7 @@ function renderRequest() {
   const headers = $('#headers');
   headers.replaceChildren(...[
     ['Content-Type', 'application/json'],
-    ...(endpoint.device ? [['X-Device-Id', $('#device-id').value.trim()]] : []),
+    ...(endpoint.auth ? [['Authorization', `Bearer ${$('#access-token').value.trim()}`]] : []),
   ].map(([key, value]) => {
     const row = document.createElement('div');
     row.className = 'header-row';
@@ -65,7 +68,10 @@ function renderRequest() {
   }));
   $('#body-label').hidden = !endpoint.body;
   if (endpoint.body && !$('#request-body').value) {
-    $('#request-body').value = JSON.stringify({ ...endpoint.body, id: $('#note-id').value.trim() }, null, 2);
+    const requestBody = { ...endpoint.body };
+    if (endpoint.name === 'Create Guest') requestBody.deviceId = $('#device-id').value.trim();
+    if (endpoint.name === 'Upsert note') requestBody.id = $('#note-id').value.trim();
+    $('#request-body').value = JSON.stringify(requestBody, null, 2);
   }
 }
 
@@ -86,19 +92,21 @@ async function runRequest() {
   try {
     if (mode === 'mock') {
       await new Promise((resolve) => setTimeout(resolve, 180));
-      const result = simulator.request({ method: endpoint.method, path, deviceId: $('#device-id').value.trim(), body });
+      const result = simulator.request({ method: endpoint.method, path, token: $('#access-token').value.trim(), body });
       showResponse(result.status, result.body, performance.now() - started);
+      captureToken(result.body);
     } else {
       const response = await fetch(`${$('#base-url').value.replace(/\/$/, '')}${path}`, {
         method: endpoint.method,
         headers: {
           'content-type': 'application/json',
-          ...(endpoint.device ? { 'x-device-id': $('#device-id').value.trim() } : {}),
+          ...(endpoint.auth ? { authorization: `Bearer ${$('#access-token').value.trim()}` } : {}),
         },
         body: body ? JSON.stringify(body) : undefined,
       });
       const responseBody = await response.json();
       showResponse(response.status, responseBody, performance.now() - started);
+      captureToken(responseBody);
     }
   } catch (error) {
     showResponse(0, { error: { code: 'NETWORK_ERROR', message: error.message, hint: 'Kiểm tra API URL, HTTPS và cấu hình CORS.' } }, performance.now() - started);
@@ -115,6 +123,13 @@ function showResponse(status, body, duration = 0) {
   $('#duration').textContent = `${Math.round(duration)} ms`;
   $('#size').textContent = `${new Blob([text]).size} B`;
   $('#response').textContent = text;
+}
+
+function captureToken(body) {
+  if (body?.data?.accessToken) {
+    $('#access-token').value = body.data.accessToken;
+    renderRequest();
+  }
 }
 
 function setMode(nextMode) {
@@ -144,7 +159,7 @@ document.addEventListener('click', async (event) => {
   }
 });
 
-['base-url', 'device-id', 'note-id'].forEach((id) => $(`#${id}`).addEventListener('input', renderRequest));
+['base-url', 'device-id', 'access-token', 'note-id'].forEach((id) => $(`#${id}`).addEventListener('input', renderRequest));
 renderEndpoints();
 renderRequest();
 runRequest();

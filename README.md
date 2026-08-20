@@ -10,7 +10,7 @@ khi có kết nối.
 - Flutter: `presentation → application → domain ← data`.
 - SQLite là cache và hàng đợi thay đổi offline.
 - REST API Express + SQLite là nguồn dữ liệu đồng bộ chính.
-- Mỗi thiết bị có UUID trong `X-Device-Id`; không có đăng nhập/Supabase.
+- Guest và tài khoản email dùng Bearer token; mật khẩu được băm PBKDF2-HMAC-SHA256.
 
 Chi tiết: [Kiến trúc](docs/architecture.md) và [API](docs/api.md).
 
@@ -35,6 +35,9 @@ docker compose logs -f api
 API chạy tại `http://localhost:8787`. SQLite nằm trong `tmpfs`, vì vậy dữ
 liệu API sẽ mất khi container dừng hoặc được tạo lại. Dùng
 `npm run docker:down` để dừng môi trường.
+
+Đăng ký kiểm tra định dạng email và cấp phiên đăng nhập ngay; bản demo không
+gửi OTP hoặc email xác minh.
 
 ### Không dùng Docker
 
@@ -78,8 +81,9 @@ APK nằm tại `build/app/outputs/flutter-apk/app-debug.apk`, hỗ trợ Androi
 
 ## Bảo mật
 
-`X-Device-Id` chỉ phân tách dữ liệu, không phải xác thực. Không lưu dữ liệu
-nhạy cảm trên Internet nếu chưa bổ sung HTTPS, auth, rate limit và backup.
+Token phiên được lưu trong Android secure storage; API chỉ lưu hash token và
+không log mật khẩu, token hoặc nội dung ghi chú. Khi triển khai Internet
+cần HTTPS, rate limit ở reverse proxy và backup database.
 
 ## Giấy phép
 

@@ -8,16 +8,16 @@ class RestCloudNoteStore implements CloudNoteStore {
   RestCloudNoteStore(
     this._client, {
     required this.baseUrl,
-    required this.deviceId,
+    required this.accessToken,
   });
 
   final http.Client _client;
   final String baseUrl;
-  final String deviceId;
+  final String accessToken;
 
   Map<String, String> get _headers => {
     'content-type': 'application/json',
-    'x-device-id': deviceId,
+    'authorization': 'Bearer $accessToken',
   };
 
   @override
