@@ -208,7 +208,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                                   top: 4,
                                   right: 4,
                                   child: GestureDetector(
-                                    onTap: () => setState(() => _images.removeAt(index)),
+                                    onTap: () =>
+                                        setState(() => _images.removeAt(index)),
                                     child: Container(
                                       padding: const EdgeInsets.all(2),
                                       decoration: const BoxDecoration(
@@ -270,10 +271,14 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.9),
+                color: theme.colorScheme.surfaceContainerHigh.withValues(
+                  alpha: 0.9,
+                ),
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                  color: theme.colorScheme.outlineVariant.withValues(
+                    alpha: 0.4,
+                  ),
                 ),
                 boxShadow: const [
                   BoxShadow(
@@ -338,7 +343,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(hintText: 'Tên thẻ (vd: Study, Projects)'),
+          decoration: const InputDecoration(
+            hintText: 'Tên thẻ (vd: Study, Projects)',
+          ),
         ),
         actions: [
           TextButton(
@@ -449,7 +456,9 @@ class _ChecklistEditor extends StatelessWidget {
                 Checkbox(
                   value: items[index].isDone,
                   onChanged: (value) {
-                    items[index] = items[index].copyWith(isDone: value ?? false);
+                    items[index] = items[index].copyWith(
+                      isDone: value ?? false,
+                    );
                     onChanged();
                   },
                 ),

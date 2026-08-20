@@ -80,35 +80,38 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
             itemBuilder: (context, index) {
               final note = notes[index];
               return Card(
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: colors.errorContainer,
-                    child: Icon(
-                      Icons.delete_outline,
-                      color: colors.onErrorContainer,
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: colors.errorContainer,
+                      child: Icon(
+                        Icons.delete_outline,
+                        color: colors.onErrorContainer,
+                      ),
                     ),
-                  ),
-                  title: Text(
-                    note.title.isEmpty
-                        ? featureText(
-                            context,
-                            vi: 'Ghi chú không tiêu đề',
-                            en: 'Untitled note',
-                          )
-                        : note.title,
-                  ),
-                  subtitle: Text(
-                    featureText(
-                      context,
-                      vi: 'Tự xóa sau 30 ngày',
-                      en: 'Deletes automatically after 30 days',
+                    title: Text(
+                      note.title.isEmpty
+                          ? featureText(
+                              context,
+                              vi: 'Ghi chú không tiêu đề',
+                              en: 'Untitled note',
+                            )
+                          : note.title,
                     ),
-                  ),
-                  trailing: FilledButton.tonalIcon(
-                    onPressed: () => _restore(note.id),
-                    icon: const Icon(Icons.restore_rounded),
-                    label: Text(
-                      featureText(context, vi: 'Khôi phục', en: 'Restore'),
+                    subtitle: Text(
+                      featureText(
+                        context,
+                        vi: 'Tự xóa sau 30 ngày',
+                        en: 'Deletes automatically after 30 days',
+                      ),
+                    ),
+                    trailing: FilledButton.tonalIcon(
+                      onPressed: () => _restore(note.id),
+                      icon: const Icon(Icons.restore_rounded),
+                      label: Text(
+                        featureText(context, vi: 'Khôi phục', en: 'Restore'),
+                      ),
                     ),
                   ),
                 ),

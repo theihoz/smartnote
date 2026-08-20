@@ -1,0 +1,8 @@
+$kind: http-request
+id: 50368433-7ee95df5-096a-4e0d-92db-f7feeccb6e0e
+url: "{{baseUrl}}/health"
+method: GET
+scripts:
+  - type: afterResponse
+    code: pm.test('status 200', () => pm.response.to.have.status(200));
+order: 1000

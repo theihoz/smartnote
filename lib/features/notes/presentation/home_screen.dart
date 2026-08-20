@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/app_theme.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../l10n/feature_text.dart';
 import '../domain/note_query.dart';
 import 'note_widgets.dart';
 
@@ -40,21 +41,38 @@ class HomeScreen extends ConsumerWidget {
                           backgroundColor: AppTheme.peach,
                           child: Icon(
                             Icons.person_rounded,
-                            size: 20,
                             color: AppTheme.coral,
+                            size: 20,
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Text(
-                          'SmartNote',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w800,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'SmartNote',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                               ),
+                              Text(
+                                featureText(
+                                  context,
+                                  vi: 'Ghi chú của bạn',
+                                  en: 'Your notes',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
                         ),
-                        const Spacer(),
-                        const _SyncBadge(),
                       ],
                     ),
                   ),
@@ -91,7 +109,12 @@ class HomeScreen extends ConsumerWidget {
                                 );
                           },
                         ),
-                        for (final tag in ['Study', 'Projects', 'Ideas', 'Personal'])
+                        for (final tag in [
+                          'Study',
+                          'Projects',
+                          'Ideas',
+                          'Personal',
+                        ])
                           _TagChip(
                             label: _translateTag(context, tag),
                             isSelected: activeTag == tag,
@@ -350,7 +373,7 @@ class _TeamHeroBannerCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Thành viên: Điệp Yến Khoa • Nguyễn Trương Diễm Quỳnh • Trần Thái Hòa',
+            'Thành viên: Diệp Yến Khoa • Nguyễn Trương Diễm Quỳnh • Trần Thái Hòa',
             style: TextStyle(
               color: Color(0xFFE3DFFF),
               fontSize: 13,
@@ -382,41 +405,6 @@ class _TeamHeroBannerCard extends StatelessWidget {
   }
 }
 
-class _SyncBadge extends StatelessWidget {
-  const _SyncBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppTheme.lavender,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        child: Row(
-          children: [
-            Icon(
-              Icons.cloud_done_rounded,
-              size: 16,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 5),
-            Text(
-              'Saved',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _InspirationCard extends ConsumerWidget {
   const _InspirationCard();
 
@@ -426,9 +414,7 @@ class _InspirationCard extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerLow,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Theme.of(

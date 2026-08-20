@@ -1,0 +1,14 @@
+$kind: http-request
+id: 50368433-bd3b09cf-fd6c-4d25-a49f-cc656314246c
+url: "{{baseUrl}}/v1/notes"
+method: GET
+headers:
+  X-Device-Id: "{{deviceId}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('created note is listed', function () {
+        const notes = pm.response.json().data;
+        pm.expect(notes.some(note => note.id === pm.environment.get('noteId'))).to.eql(true);
+      });
+order: 3000

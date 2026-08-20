@@ -4,10 +4,11 @@ import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
 import '../features/inspiration/data/quote_api_repository.dart';
+import '../features/sync/data/api_config.dart';
+import '../features/sync/data/logging_http_client.dart';
 import '../features/notes/application/notes_controller.dart';
 import '../features/notes/domain/note_repository.dart';
 import '../features/settings/data/app_settings_repository.dart';
-import '../features/auth/data/sync_auth_service.dart';
 import '../features/security/data/pin_lock_service.dart';
 import '../features/reminders/data/local_notification_scheduler.dart';
 import '../features/reminders/domain/note_reminder.dart';
@@ -27,7 +28,6 @@ final appSettingsStoreProvider = Provider<AppSettingsStore>(
   (_) => MemoryAppSettingsStore(),
 );
 
-final syncAuthServiceProvider = Provider<SyncAuthService?>((_) => null);
 final pinLockServiceProvider = Provider<PinLockService?>((_) => null);
 final reminderRepositoryProvider = Provider<ReminderRepository?>((_) => null);
 final reminderSchedulerProvider = Provider<ReminderScheduler?>((_) => null);
@@ -44,9 +44,16 @@ final notesControllerProvider =
     });
 
 final quoteProvider = FutureProvider<Quote>((ref) async {
-  final client = http.Client();
+  final config = ApiConfig.fromEnvironment();
+  if (config == null) {
+    return const Quote(
+      text: 'Ý tưởng lớn bắt đầu từ một ghi chú nhỏ.',
+      author: 'SmartNote',
+    );
+  }
+  final client = LoggingHttpClient(http.Client());
   ref.onDispose(client.close);
-  return QuoteApiRepository(client).fetchRandom();
+  return QuoteApiRepository(client, baseUrl: config.baseUrl).fetchRandom();
 });
 
 final themeModeProvider = StateProvider<ThemeMode>(

@@ -1,0 +1,28 @@
+$kind: http-request
+id: 50368433-e7100117-84c1-460c-a921-c239553b430e
+url: "{{baseUrl}}/v1/notes/{{noteId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  X-Device-Id: "{{deviceId}}"
+body:
+  type: text
+  content: |-
+    {
+      "id": "{{noteId}}",
+      "title": "Postman note",
+      "body": "Created by Postman CLI",
+      "kind": "text",
+      "checklist": [],
+      "tags": ["postman"],
+      "imagePaths": [],
+      "isFavorite": false,
+      "isLocked": false,
+      "colorKey": "lavender",
+      "createdAt": "2026-08-20T00:00:00.000Z",
+      "updatedAt": "2026-08-20T00:00:00.000Z"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('upsert succeeds', () => pm.response.to.have.status(200));
+order: 2000

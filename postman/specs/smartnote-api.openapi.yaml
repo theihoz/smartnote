@@ -1,0 +1,125 @@
+openapi: 3.0.3
+info:
+  title: SmartNote API
+  version: 1.0.0
+  description: REST API nhỏ cho SmartNote, phân tách dữ liệu bằng X-Device-Id.
+servers:
+  - url: http://127.0.0.1:8787
+paths:
+  /health:
+    get:
+      summary: Kiểm tra API
+      responses:
+        '200':
+          description: API hoạt động
+  /v1/quotes/random:
+    get:
+      summary: Lấy câu trích dẫn ngẫu nhiên
+      responses:
+        '200':
+          description: Quote và request ID
+  /v1/notes:
+    get:
+      summary: Lấy ghi chú của thiết bị
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - name: updatedAfter
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Danh sách ghi chú, gồm tombstone
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/notes/{id}:
+    parameters:
+      - $ref: '#/components/parameters/DeviceId'
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Lấy một ghi chú
+      responses:
+        '200':
+          description: Ghi chú
+        '404':
+          description: Không tìm thấy
+    put:
+      summary: Tạo hoặc cập nhật idempotent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Note'
+      responses:
+        '200':
+          description: Ghi chú đã lưu
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    delete:
+      summary: Soft-delete ghi chú
+      responses:
+        '200':
+          description: Tombstone đã lưu
+        '404':
+          description: Không tìm thấy
+components:
+  parameters:
+    DeviceId:
+      name: X-Device-Id
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Request không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+  schemas:
+    ChecklistItem:
+      type: object
+      required: [id, text, isDone, position]
+      properties:
+        id: { type: string }
+        text: { type: string }
+        isDone: { type: boolean }
+        position: { type: integer }
+    Note:
+      type: object
+      required: [id, title, body, kind, checklist, tags, imagePaths, isFavorite, isLocked, colorKey, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string, maxLength: 500 }
+        body: { type: string, maxLength: 100000 }
+        kind: { type: string, enum: [text, checklist] }
+        checklist:
+          type: array
+          items: { $ref: '#/components/schemas/ChecklistItem' }
+        tags: { type: array, items: { type: string } }
+        imagePaths: { type: array, items: { type: string } }
+        isFavorite: { type: boolean }
+        isLocked: { type: boolean }
+        colorKey: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        deletedAt: { type: string, format: date-time, nullable: true }
+    ErrorEnvelope:
+      type: object
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            requestId: { type: string, format: uuid }

@@ -90,4 +90,3 @@ abstract final class AppTheme {
     );
   }
 }
-

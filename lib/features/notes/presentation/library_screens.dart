@@ -29,9 +29,9 @@ class SearchScreen extends ConsumerWidget {
             TextField(
               key: const Key('search-field'),
               autofocus: false,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.search_rounded),
-                hintText: l10n.searchHint,
+                hintText: 'Search notes',
                 suffixIcon: Icon(Icons.tune_rounded),
               ),
               onChanged: (value) => ref

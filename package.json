@@ -1,0 +1,18 @@
+{
+  "name": "smartnote",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "api:start": "node api/src/server.js",
+    "api:test": "node --test api/test/*.test.js",
+    "docker:up": "docker compose up --build -d --wait",
+    "docker:down": "docker compose down",
+    "docker:test": "docker compose up -d --wait && npm run postman:test",
+    "postman:lint": "postman spec lint postman/specs/smartnote-api.openapi.yaml",
+    "postman:test": "postman collection run postman/collections/SmartNote -e postman/environments/SmartNote.local.postman_environment.json",
+    "postman:push": "postman workspace prepare && postman workspace push --yes"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

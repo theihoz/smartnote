@@ -32,6 +32,12 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+node_modules/
+api/data/
+*.db
+*.db-shm
+*.db-wal
+postman-cli-reports/
 
 # Symbolication related
 app.*.symbols
@@ -53,8 +59,6 @@ devtools_options.yaml
 
 # Local-only project artifacts
 /download_site/
-/supabase/migrations/
-/test/
 
 # Environment files and sensitive signing material
 .env

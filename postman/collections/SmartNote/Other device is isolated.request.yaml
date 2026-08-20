@@ -1,0 +1,10 @@
+$kind: http-request
+id: 50368433-5fea5762-3135-4026-97bb-0904aecfe01c
+url: "{{baseUrl}}/v1/notes"
+method: GET
+headers:
+  X-Device-Id: "{{otherDeviceId}}"
+scripts:
+  - type: afterResponse
+    code: pm.test('other device has no notes', () => pm.expect(pm.response.json().data).to.eql([]));
+order: 4000

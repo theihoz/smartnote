@@ -12,8 +12,6 @@ import '../features/notes/presentation/trash_screen.dart';
 import '../features/export/presentation/export_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/settings/data/app_settings_repository.dart';
-import '../features/auth/data/sync_auth_service.dart';
-import '../features/auth/presentation/auth_screen.dart';
 import '../features/security/data/pin_lock_service.dart';
 import '../features/security/presentation/security_screen.dart';
 import '../features/reminders/data/local_notification_scheduler.dart';
@@ -28,7 +26,7 @@ class SmartNoteApp extends StatelessWidget {
     super.key,
     required this.repository,
     this.settingsStore,
-    this.authService,
+    this.syncOnStartup,
     this.pinLockService,
     this.reminderRepository,
     this.reminderScheduler,
@@ -36,7 +34,7 @@ class SmartNoteApp extends StatelessWidget {
 
   final NoteRepository repository;
   final AppSettingsStore? settingsStore;
-  final SyncAuthService? authService;
+  final Future<Object?> Function()? syncOnStartup;
   final PinLockService? pinLockService;
   final ReminderRepository? reminderRepository;
   final ReminderScheduler? reminderScheduler;
@@ -48,8 +46,6 @@ class SmartNoteApp extends StatelessWidget {
         noteRepositoryProvider.overrideWithValue(repository),
         if (settingsStore != null)
           appSettingsStoreProvider.overrideWithValue(settingsStore!),
-        if (authService != null)
-          syncAuthServiceProvider.overrideWithValue(authService),
         if (pinLockService != null)
           pinLockServiceProvider.overrideWithValue(pinLockService),
         if (reminderRepository != null)
@@ -57,13 +53,15 @@ class SmartNoteApp extends StatelessWidget {
         if (reminderScheduler != null)
           reminderSchedulerProvider.overrideWithValue(reminderScheduler),
       ],
-      child: const _SmartNoteRouterApp(),
+      child: _SmartNoteRouterApp(syncOnStartup: syncOnStartup),
     );
   }
 }
 
 class _SmartNoteRouterApp extends ConsumerStatefulWidget {
-  const _SmartNoteRouterApp();
+  const _SmartNoteRouterApp({this.syncOnStartup});
+
+  final Future<Object?> Function()? syncOnStartup;
 
   @override
   ConsumerState<_SmartNoteRouterApp> createState() =>
@@ -71,6 +69,15 @@ class _SmartNoteRouterApp extends ConsumerStatefulWidget {
 }
 
 class _SmartNoteRouterAppState extends ConsumerState<_SmartNoteRouterApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await widget.syncOnStartup?.call();
+      if (mounted) await ref.read(notesControllerProvider.notifier).load();
+    });
+  }
+
   late final GoRouter _router = GoRouter(
     routes: [
       GoRoute(
@@ -97,7 +104,6 @@ class _SmartNoteRouterAppState extends ConsumerState<_SmartNoteRouterApp> {
         path: '/security',
         builder: (context, state) => const SecurityScreen(),
       ),
-      GoRoute(path: '/auth', builder: (context, state) => const AuthScreen()),
       GoRoute(
         path: '/export',
         builder: (context, state) => const ExportScreen(),

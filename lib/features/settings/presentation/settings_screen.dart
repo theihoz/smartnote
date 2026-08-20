@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/feature_text.dart';
-import '../../sync/data/supabase_config.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -17,7 +16,6 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(localeProvider);
     final l10n = AppLocalizations.of(context);
-    final supabaseEnabled = SupabaseConfig.fromEnvironment() != null;
     final theme = Theme.of(context);
 
     return SafeArea(
@@ -38,9 +36,9 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
-          // Security & Sync Bento Card
+          // Security Bento Card
           _BentoCard(
-            title: 'Security & Sync',
+            title: 'Security',
             icon: Icons.shield_rounded,
             iconColor: theme.colorScheme.primary,
             children: [
@@ -54,7 +52,11 @@ class SettingsScreen extends ConsumerWidget {
                   child: const Icon(Icons.lock_rounded, size: 20),
                 ),
                 title: Text(
-                  featureText(context, vi: 'Khóa ghi chú & PIN', en: 'Security & PIN Lock'),
+                  featureText(
+                    context,
+                    vi: 'Khóa ghi chú & PIN',
+                    en: 'Security & PIN Lock',
+                  ),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 subtitle: Text(
@@ -66,51 +68,6 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => context.push('/security'),
-              ),
-              const Divider(indent: 56, height: 1),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHigh,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.cloud_sync_rounded, size: 20),
-                ),
-                title: Text(
-                  featureText(
-                    context,
-                    vi: 'Tài khoản & Đồng bộ Cloud',
-                    en: 'Cloud Sync & Supabase Auth',
-                  ),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                subtitle: Text(
-                  supabaseEnabled ? l10n.cloudReady : l10n.cloudUnavailable,
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        supabaseEnabled ? 'Active' : 'Offline',
-                        style: TextStyle(
-                          color: theme.colorScheme.primary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.chevron_right_rounded),
-                  ],
-                ),
-                onTap: () => context.push('/auth'),
               ),
             ],
           ),
@@ -141,7 +98,9 @@ class SettingsScreen extends ConsumerWidget {
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 subtitle: Text(
-                  themeMode == ThemeMode.dark ? 'Currently Dark' : 'Currently Light',
+                  themeMode == ThemeMode.dark
+                      ? 'Currently Dark'
+                      : 'Currently Light',
                 ),
                 trailing: Switch(
                   value: themeMode == ThemeMode.dark,
@@ -206,7 +165,7 @@ class SettingsScreen extends ConsumerWidget {
                   child: const Icon(Icons.download_rounded, size: 20),
                 ),
                 title: Text(
-                  featureText(context, vi: 'Xuất dữ liệu', en: 'Export Data'),
+                  featureText(context, vi: 'Xuất ghi chú', en: 'Export Data'),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 subtitle: const Text('PDF / Markdown / JSON'),
@@ -218,7 +177,9 @@ class SettingsScreen extends ConsumerWidget {
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.errorContainer.withValues(alpha: 0.5),
+                    color: theme.colorScheme.errorContainer.withValues(
+                      alpha: 0.5,
+                    ),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -296,14 +257,15 @@ class _BentoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
+    return Material(
+      color: theme.colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
+        side: BorderSide(
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

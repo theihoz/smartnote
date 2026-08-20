@@ -1,0 +1,12 @@
+$kind: collection
+id: 50368433-73918b79-021a-43f9-bb21-24444fa82349
+name: SmartNote API
+description: Collection kiểm thử REST API SmartNote. Không chứa secret.
+scripts:
+  - type: http:afterResponse
+    code: |-
+      pm.test('response has requestId', function () {
+        const body = pm.response.json();
+        pm.expect((body.meta && body.meta.requestId) || (body.error && body.error.requestId)).to.be.a('string');
+      });
+    language: text/javascript
