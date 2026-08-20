@@ -14,6 +14,8 @@ khi có kết nối.
 
 Chi tiết: [Kiến trúc](docs/architecture.md) và [API](docs/api.md).
 
+Khám phá request/response bằng [API Playground](https://theihoz.github.io/smartnote/).
+
 ## Yêu cầu
 
 - Flutter 3.44+ và Android SDK.

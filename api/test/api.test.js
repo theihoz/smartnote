@@ -35,6 +35,34 @@ test('health returns a request id', async () => {
   assert.match(body.meta.requestId, /^[0-9a-f-]{36}$/);
 });
 
+test('allows the GitHub Pages playground without reflecting other origins', async () => {
+  let response = await request('/health', {
+    headers: { origin: 'https://theihoz.github.io' },
+  });
+  assert.equal(
+    response.headers.get('access-control-allow-origin'),
+    'https://theihoz.github.io',
+  );
+
+  response = await request('/v1/notes', {
+    method: 'OPTIONS',
+    headers: {
+      origin: 'https://theihoz.github.io',
+      'access-control-request-method': 'GET',
+    },
+  });
+  assert.equal(response.status, 204);
+  assert.match(
+    response.headers.get('access-control-allow-headers'),
+    /X-Device-Id/i,
+  );
+
+  response = await request('/health', {
+    headers: { origin: 'https://example.com' },
+  });
+  assert.equal(response.headers.get('access-control-allow-origin'), null);
+});
+
 test('upsert, pull and delete a note for one device', async () => {
   const note = {
     id: '22222222-2222-4222-8222-222222222222',

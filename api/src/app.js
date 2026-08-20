@@ -25,6 +25,17 @@ export function createApp({ databasePath = 'api/data/smartnote-api.db', log = co
   `);
 
   const app = express();
+  app.use((request, response, next) => {
+    const origin = request.get('origin');
+    if (origin && isAllowedOrigin(origin)) {
+      response.setHeader('access-control-allow-origin', origin);
+      response.setHeader('vary', 'Origin');
+      response.setHeader('access-control-allow-methods', 'GET, PUT, DELETE, OPTIONS');
+      response.setHeader('access-control-allow-headers', 'Content-Type, X-Device-Id');
+    }
+    if (request.method === 'OPTIONS') return response.sendStatus(204);
+    next();
+  });
   app.use(express.json({ limit: '1mb' }));
   app.use((request, response, next) => {
     request.requestId = randomUUID();
@@ -122,6 +133,11 @@ function shortDeviceId(value) {
 
 function isTimestamp(value) {
   return typeof value === 'string' && !Number.isNaN(Date.parse(value));
+}
+
+function isAllowedOrigin(origin) {
+  return origin === 'https://theihoz.github.io'
+    || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 }
 
 function isValidNote(note) {
