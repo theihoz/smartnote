@@ -21,6 +21,10 @@ Mỗi profile dùng file SQLite riêng. Đăng xuất khóa cache tài khoản; 
 không làm mất khả năng CRUD local. Khi Guest đăng nhập, outbox được đẩy trước,
 API gộp dữ liệu theo `updatedAt`, rồi app tải cache tài khoản.
 
+Phiên và Guest đều được cấp từ API. Vì vậy lần mở đầu tiên cần một
+`API_BASE_URL` có thể truy cập; chế độ offline áp dụng sau khi thiết bị đã có
+phiên và cache cục bộ.
+
 ## Backend
 
 Backend là một process Express dùng SQLite WAL. `principals` thống nhất Guest
@@ -28,3 +32,7 @@ và tài khoản; ghi chú khóa theo `(owner_id, note_id)`. Session dùng Beare
 mật khẩu dùng PBKDF2-HMAC-SHA256. Bản demo chỉ kiểm tra định dạng email và cấp
 phiên ngay sau khi đăng ký.
 Thiết kế phù hợp khoảng 100 người dùng trên một instance.
+
+Docker Compose gắn `api/data` vào `tmpfs` cho môi trường demo. Đây không phải
+lưu trữ bền vững: tài khoản, phiên và ghi chú server mất khi container bị dừng
+hoặc tạo lại.

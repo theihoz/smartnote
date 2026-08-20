@@ -16,6 +16,8 @@ Chi tiết: [Kiến trúc](docs/architecture.md) và [API](docs/api.md).
 
 Khám phá request/response bằng [API Playground](https://theihoz.github.io/smartnote/).
 
+Tải bản Android mới nhất tại [GitHub Releases](https://github.com/theihoz/smartnote/releases/latest).
+
 ## Yêu cầu
 
 - Flutter 3.44+ và Android SDK.
@@ -54,8 +56,9 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8787
 ```
 
 `10.0.2.2` dùng cho Android Emulator. Thiết bị thật dùng IP LAN của máy chạy
-API, ví dụ `http://192.168.1.10:8787`. Không truyền `API_BASE_URL` thì app chạy
-local-only.
+API, ví dụ `http://192.168.1.10:8787`. Bản cài mới cần API để tạo phiên Guest,
+đăng ký hoặc đăng nhập; sau khi có phiên, SQLite giữ cache và hỗ trợ CRUD khi
+mất mạng.
 
 ## Kiểm thử
 
@@ -65,11 +68,12 @@ npm run postman:lint
 npm run postman:test
 flutter analyze
 flutter test
-flutter build apk --debug
+flutter build apk --debug --dart-define=API_BASE_URL=http://10.0.2.2:8787
+flutter build apk --release --dart-define=API_BASE_URL=http://192.168.1.10:8787
 ```
 
-APK nằm tại `build/app/outputs/flutter-apk/app-debug.apk`, hỗ trợ Android
-7.0/API 24 trở lên.
+APK nằm trong `build/app/outputs/flutter-apk/`, hỗ trợ Android 7.0/API 24 trở
+lên. Release hiện dùng khóa debug để demo, chưa phù hợp Google Play.
 
 ## Tài liệu
 
@@ -88,3 +92,9 @@ cần HTTPS, rate limit ở reverse proxy và backup database.
 ## Giấy phép
 
 MIT — xem [LICENSE](LICENSE).
+
+## Thành viên
+
+- Diệp Yến Khoa
+- Nguyễn Trường Diễm Quỳnh
+- Trần Thái Hòa

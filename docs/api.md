@@ -20,7 +20,8 @@ OpenAPI nằm tại `postman/specs/smartnote-api.openapi.yaml`.
 
 Endpoint ghi chú yêu cầu `Authorization: Bearer <token>`. Response thành công
 có `data` và `meta.requestId`; lỗi có `error.code`, `error.message`,
-`error.requestId`. Bản demo chỉ kiểm tra định dạng email, không xác minh quyền sở hữu email.
+`error.requestId`. Bản demo chỉ kiểm tra định dạng email, không xác minh quyền
+sở hữu email. Mật khẩu dài 8–72 ký tự và được băm bằng PBKDF2-HMAC-SHA256.
 
 ```powershell
 npm run postman:lint
