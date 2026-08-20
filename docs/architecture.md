@@ -21,9 +21,9 @@ Mỗi profile dùng file SQLite riêng. Đăng xuất khóa cache tài khoản; 
 không làm mất khả năng CRUD local. Khi Guest đăng nhập, outbox được đẩy trước,
 API gộp dữ liệu theo `updatedAt`, rồi app tải cache tài khoản.
 
-Phiên và Guest đều được cấp từ API. Vì vậy lần mở đầu tiên cần một
-`API_BASE_URL` có thể truy cập; chế độ offline áp dụng sau khi thiết bị đã có
-phiên và cache cục bộ.
+APK mặc định lưu tài khoản, mật khẩu đã băm, phiên Guest và ghi chú trong
+SQLite theo từng hồ sơ trên điện thoại. Khi build với `API_BASE_URL`, ứng dụng
+chuyển xác thực và đồng bộ sang REST/Docker.
 
 ## Backend
 

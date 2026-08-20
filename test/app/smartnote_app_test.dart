@@ -2,11 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartnote/app/smartnote_app.dart';
 import 'package:smartnote/features/notes/domain/note.dart';
+import 'package:smartnote/features/notes/domain/note_draft_repository.dart';
 import 'package:smartnote/features/notes/domain/note_query.dart';
 import 'package:smartnote/features/notes/domain/note_repository.dart';
 import 'package:smartnote/features/notes/presentation/note_widgets.dart';
 
 void main() {
+  testWidgets('editor restores an autosaved draft', (tester) async {
+    final drafts = _MemoryDraftRepository()
+      ..drafts['new'] = NoteAutosaveDraft(
+        noteId: 'new',
+        title: 'Ý tưởng đang viết',
+        body: 'Nội dung chưa bấm lưu',
+        updatedAt: DateTime(2026, 8, 20),
+      );
+
+    await tester.pumpWidget(
+      SmartNoteApp(
+        repository: _MemoryNoteRepository([]),
+        draftRepository: drafts,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('create-note-fab')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ý tưởng đang viết'), findsOneWidget);
+    expect(find.text('Nội dung chưa bấm lưu'), findsOneWidget);
+  });
+
   testWidgets('home renders repository notes and opens search', (tester) async {
     await tester.pumpWidget(
       SmartNoteApp(repository: _MemoryNoteRepository([_dalatNote()])),
@@ -21,6 +45,27 @@ void main() {
 
     expect(find.byKey(const Key('search-field')), findsOneWidget);
     expect(find.text('Tìm kiếm'), findsWidgets);
+  });
+
+  testWidgets('search opens filters and combines favorites with oldest sort', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      SmartNoteApp(repository: _MemoryNoteRepository([_dalatNote()])),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.search_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('search-filter-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bộ lọc ghi chú'), findsOneWidget);
+    await tester.tap(find.text('Chỉ ghi chú yêu thích'));
+    await tester.tap(find.text('Cũ nhất'));
+    await tester.tap(find.text('Áp dụng'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Lịch trình du lịch Đà Lạt'), findsOneWidget);
   });
 
   testWidgets('editor rejects an empty note', (tester) async {
@@ -166,6 +211,21 @@ void main() {
     expect(repository.notes, hasLength(1));
     expect(find.text('Lịch trình du lịch Đà Lạt'), findsOneWidget);
   });
+}
+
+class _MemoryDraftRepository implements NoteDraftRepository {
+  final drafts = <String, NoteAutosaveDraft>{};
+
+  @override
+  Future<void> delete(String noteId) async => drafts.remove(noteId);
+
+  @override
+  Future<NoteAutosaveDraft?> getByNoteId(String noteId) async => drafts[noteId];
+
+  @override
+  Future<void> save(NoteAutosaveDraft draft) async {
+    drafts[draft.noteId] = draft;
+  }
 }
 
 Future<void> _scrollTo(WidgetTester tester, Finder finder) async {

@@ -6,7 +6,8 @@ import '../domain/note.dart';
 import '../domain/note_query.dart';
 import '../domain/note_repository.dart';
 
-class SqliteNoteRepository implements NoteRepository, TrashNoteRepository {
+class SqliteNoteRepository
+    implements NoteRepository, TrashNoteRepository, NoteVersionRepository {
   SqliteNoteRepository(this._database);
 
   final Database _database;
@@ -174,6 +175,42 @@ class SqliteNoteRepository implements NoteRepository, TrashNoteRepository {
       where: 'deleted_at IS NOT NULL AND deleted_at <= ?',
       whereArgs: [cutoff.toIso8601String()],
     );
+  }
+
+  @override
+  Future<List<NoteVersion>> listVersions(String noteId) async {
+    final rows = await _database.query(
+      'note_versions',
+      where: 'note_id = ?',
+      whereArgs: [noteId],
+      orderBy: 'created_at DESC',
+    );
+    return rows.map((row) {
+      final snapshot =
+          jsonDecode(row['snapshot']! as String) as Map<String, dynamic>;
+      return NoteVersion(
+        title: snapshot['title'] as String? ?? '',
+        body: snapshot['body'] as String? ?? '',
+        kind: NoteKind.values.byName(snapshot['kind'] as String? ?? 'text'),
+        checklist: (snapshot['checklist'] as List<dynamic>? ?? const []).map((
+          value,
+        ) {
+          final item = value as Map<String, dynamic>;
+          return ChecklistItem(
+            id: item['id'] as String,
+            text: item['text'] as String,
+            isDone: item['is_done'] as bool? ?? false,
+            position: item['position'] as int? ?? 0,
+          );
+        }).toList(),
+        tags: (snapshot['tags'] as List<dynamic>? ?? const []).cast<String>(),
+        isFavorite: snapshot['is_favorite'] as bool? ?? false,
+        colorKey: snapshot['color_key'] as String? ?? 'lavender',
+        imagePaths: (snapshot['image_paths'] as List<dynamic>? ?? const [])
+            .cast<String>(),
+        createdAt: DateTime.parse(row['created_at']! as String),
+      );
+    }).toList();
   }
 
   Future<Note> _hydrate(Map<String, Object?> row) async {

@@ -52,13 +52,27 @@ Mở terminal khác:
 
 ```powershell
 flutter pub get
+flutter run
+```
+
+Không truyền `API_BASE_URL`, đăng ký, đăng nhập, Guest và ghi chú đều lưu trong
+SQLite trên điện thoại, không cần Wi-Fi. Khi truyền URL, ứng dụng dùng tài khoản
+và đồng bộ từ Docker; `10.0.2.2` dành cho Emulator, thiết bị thật dùng IP LAN.
+
+Chạy với Docker trên Android Emulator:
+
+```powershell
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8787
 ```
 
-`10.0.2.2` dùng cho Android Emulator. Thiết bị thật dùng IP LAN của máy chạy
-API, ví dụ `http://192.168.1.10:8787`. Bản cài mới cần API để tạo phiên Guest,
-đăng ký hoặc đăng nhập; sau khi có phiên, SQLite giữ cache và hỗ trợ CRUD khi
-mất mạng.
+Build APK cho điện thoại thật cùng Wi-Fi với máy chạy Docker:
+
+```powershell
+flutter build apk --release --dart-define=API_BASE_URL=http://192.168.1.10:8787
+```
+
+Thay `192.168.1.10` bằng IPv4 LAN của máy tính lấy từ `ipconfig`. URL được gắn
+vào APK lúc build; nếu IP máy tính thay đổi thì cần build lại APK.
 
 ## Kiểm thử
 
@@ -68,8 +82,8 @@ npm run postman:lint
 npm run postman:test
 flutter analyze
 flutter test
-flutter build apk --debug --dart-define=API_BASE_URL=http://10.0.2.2:8787
-flutter build apk --release --dart-define=API_BASE_URL=http://192.168.1.10:8787
+flutter build apk --debug
+flutter build apk --release
 ```
 
 APK nằm trong `build/app/outputs/flutter-apk/`, hỗ trợ Android 7.0/API 24 trở

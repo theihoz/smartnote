@@ -6,13 +6,23 @@
 - Thiết bị thật dùng IP LAN của máy chạy API.
 - Kiểm tra `/health`, firewall và hai thiết bị cùng mạng.
 - Đối chiếu `requestId` trong log `smartnote.api` và JSON log backend.
+- `API_BASE_URL` được gắn vào APK khi build; sửa IP yêu cầu build và cài lại.
+
+Ví dụ kiểm tra từ điện thoại thật:
+
+```text
+http://192.168.1.10:8787/health
+```
+
+Nếu URL này không mở được, lỗi nằm ở Docker, IP LAN hoặc Windows Firewall;
+ứng dụng không thể tự chuyển từ API hỏng sang tài khoản SQLite vì hai nguồn có
+danh sách tài khoản riêng.
 
 ## App chạy nhưng chưa đồng bộ
 
-Nếu thiết bị đã có phiên, dữ liệu vẫn ở SQLite và outbox được giữ để thử lại
-lần mở sau. Với bản cài mới, thiếu `API_BASE_URL` khiến đăng nhập, đăng ký và
-Guest báo `API_BASE_URL chưa được cấu hình`; hãy build lại APK với URL API mà
-thiết bị truy cập được.
+APK mặc định chạy local bằng SQLite nên đăng ký, đăng nhập và Guest không cần
+API. Bản APK được build với `API_BASE_URL` mới gửi tài khoản và ghi chú tới máy
+chủ Docker.
 
 ## Notification không xuất hiện
 

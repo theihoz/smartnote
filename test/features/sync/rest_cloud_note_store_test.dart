@@ -7,6 +7,10 @@ import 'package:smartnote/features/sync/data/api_config.dart';
 import 'package:smartnote/features/sync/data/rest_cloud_note_store.dart';
 
 void main() {
+  test('APK uses local SQLite when no API URL is supplied', () {
+    expect(ApiConfig.fromEnvironment(), isNull);
+  });
+
   test('empty API URL keeps the app in local-only mode', () {
     expect(ApiConfig.fromValue(''), isNull);
     expect(

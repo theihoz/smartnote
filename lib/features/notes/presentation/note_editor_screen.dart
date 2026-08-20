@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +13,7 @@ import '../../../app/providers.dart';
 import '../../../l10n/app_localizations.dart';
 import '../domain/note.dart';
 import '../domain/note_validator.dart';
+import '../domain/note_draft_repository.dart';
 
 class NoteEditorScreen extends ConsumerStatefulWidget {
   const NoteEditorScreen({super.key, this.noteId});
@@ -32,6 +34,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   String? _error;
   Note? _original;
   bool _initialized = false;
+  Timer? _autosaveTimer;
+
+  String get _draftId => widget.noteId ?? 'new';
 
   @override
   void didChangeDependencies() {
@@ -51,10 +56,45 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
         }
       }
     }
+    _restoreDraft();
+    _titleController.addListener(_scheduleAutosave);
+    _bodyController.addListener(_scheduleAutosave);
+  }
+
+  Future<void> _restoreDraft() async {
+    final draft = await ref
+        .read(noteDraftRepositoryProvider)
+        ?.getByNoteId(_draftId);
+    if (draft == null ||
+        (_original != null && !draft.updatedAt.isAfter(_original!.updatedAt)) ||
+        !mounted) {
+      return;
+    }
+    setState(() {
+      _titleController.text = draft.title;
+      _bodyController.text = draft.body;
+    });
+  }
+
+  void _scheduleAutosave() {
+    _autosaveTimer?.cancel();
+    _autosaveTimer = Timer(const Duration(milliseconds: 500), () {
+      ref
+          .read(noteDraftRepositoryProvider)
+          ?.save(
+            NoteAutosaveDraft(
+              noteId: _draftId,
+              title: _titleController.text,
+              body: _bodyController.text,
+              updatedAt: DateTime.now(),
+            ),
+          );
+    });
   }
 
   @override
   void dispose() {
+    _autosaveTimer?.cancel();
     _titleController.dispose();
     _bodyController.dispose();
     super.dispose();
@@ -402,6 +442,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
       });
       return;
     }
+    _autosaveTimer?.cancel();
+    await ref.read(noteDraftRepositoryProvider)?.delete(_draftId);
+    if (!mounted) return;
     context.go('/');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       scaffoldMessengerKey.currentState?.showSnackBar(

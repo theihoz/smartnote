@@ -12,7 +12,7 @@ class AuthController extends ChangeNotifier {
     this.session,
   });
 
-  final AuthApiClient? api;
+  final AuthGateway? api;
   final SecureAuthStore store;
   final String deviceId;
   final Future<void> Function(AuthSession? previous, AuthSession next)
@@ -68,12 +68,12 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  AuthApiClient _requireApi() =>
+  AuthGateway _requireApi() =>
       api ??
       (throw const AuthApiException(
         0,
         'API_NOT_CONFIGURED',
-        'API_BASE_URL chưa được cấu hình.',
+        'Không thể kết nối máy chủ. Hãy kiểm tra Docker đang chạy.',
       ));
 
   Future<void> _run(Future<void> Function() action) async {

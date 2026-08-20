@@ -18,3 +18,31 @@ abstract interface class TrashNoteRepository {
 
   Future<int> purgeExpiredTrash(DateTime now);
 }
+
+class NoteVersion {
+  const NoteVersion({
+    required this.title,
+    required this.body,
+    required this.kind,
+    required this.checklist,
+    required this.tags,
+    required this.isFavorite,
+    required this.colorKey,
+    required this.imagePaths,
+    required this.createdAt,
+  });
+
+  final String title;
+  final String body;
+  final NoteKind kind;
+  final List<ChecklistItem> checklist;
+  final List<String> tags;
+  final bool isFavorite;
+  final String colorKey;
+  final List<String> imagePaths;
+  final DateTime createdAt;
+}
+
+abstract interface class NoteVersionRepository {
+  Future<List<NoteVersion>> listVersions(String noteId);
+}

@@ -8,6 +8,7 @@ import '../features/sync/data/api_config.dart';
 import '../features/sync/data/logging_http_client.dart';
 import '../features/notes/application/notes_controller.dart';
 import '../features/notes/domain/note_repository.dart';
+import '../features/notes/domain/note_draft_repository.dart';
 import '../features/settings/data/app_settings_repository.dart';
 import '../features/security/data/pin_lock_service.dart';
 import '../features/reminders/data/local_notification_scheduler.dart';
@@ -17,10 +18,19 @@ final noteRepositoryProvider = Provider<NoteRepository>(
   (ref) => throw StateError('noteRepositoryProvider must be overridden'),
 );
 
+final noteDraftRepositoryProvider = Provider<NoteDraftRepository?>((_) => null);
+
 final trashNoteRepositoryProvider = Provider<TrashNoteRepository?>((ref) {
   final repository = ref.watch(noteRepositoryProvider);
   return repository is TrashNoteRepository
       ? repository as TrashNoteRepository
+      : null;
+});
+
+final noteVersionRepositoryProvider = Provider<NoteVersionRepository?>((ref) {
+  final repository = ref.watch(noteRepositoryProvider);
+  return repository is NoteVersionRepository
+      ? repository as NoteVersionRepository
       : null;
 });
 
@@ -31,6 +41,7 @@ final appSettingsStoreProvider = Provider<AppSettingsStore>(
 final pinLockServiceProvider = Provider<PinLockService?>((_) => null);
 final reminderRepositoryProvider = Provider<ReminderRepository?>((_) => null);
 final reminderSchedulerProvider = Provider<ReminderScheduler?>((_) => null);
+final authEnabledProvider = Provider<bool>((_) => false);
 
 final notesControllerProvider =
     StateNotifierProvider<NotesController, NotesState>((ref) {

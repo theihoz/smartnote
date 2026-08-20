@@ -6,12 +6,26 @@ import '../domain/auth_session.dart';
 
 export '../domain/auth_session.dart';
 
-class AuthApiClient {
+abstract interface class AuthGateway {
+  Future<AuthSession> guest(String deviceId, {String? guestSecret});
+  Future<AuthSession> register(String email, String password);
+  Future<AuthSession> login(String email, String password);
+  Future<void> logout(String token);
+  Future<void> changePassword(
+    String token,
+    String currentPassword,
+    String newPassword,
+  );
+  Future<void> claimGuest(String accountToken, String guestToken);
+}
+
+class AuthApiClient implements AuthGateway {
   AuthApiClient(this._client, {required this.baseUrl});
 
   final http.Client _client;
   final String baseUrl;
 
+  @override
   Future<AuthSession> guest(String deviceId, {String? guestSecret}) async {
     final data = await _send(
       '/v1/auth/guest',
@@ -26,6 +40,7 @@ class AuthApiClient {
     );
   }
 
+  @override
   Future<AuthSession> register(String email, String password) async =>
       _accountSession(
         await _send(
@@ -34,6 +49,7 @@ class AuthApiClient {
         ),
       );
 
+  @override
   Future<AuthSession> login(String email, String password) async =>
       _accountSession(
         await _send(
@@ -42,8 +58,10 @@ class AuthApiClient {
         ),
       );
 
+  @override
   Future<void> logout(String token) => _send('/v1/auth/logout', token: token);
 
+  @override
   Future<void> changePassword(
     String token,
     String currentPassword,
@@ -55,6 +73,7 @@ class AuthApiClient {
     body: {'currentPassword': currentPassword, 'newPassword': newPassword},
   );
 
+  @override
   Future<void> claimGuest(String accountToken, String guestToken) => _send(
     '/v1/auth/claim-guest',
     token: accountToken,

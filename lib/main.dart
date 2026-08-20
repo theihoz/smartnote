@@ -9,14 +9,17 @@ import 'package:sqflite/sqflite.dart';
 import 'app/smartnote_app.dart';
 import 'features/auth/application/auth_controller.dart';
 import 'features/auth/data/auth_api_client.dart';
+import 'features/auth/data/local_auth_gateway.dart';
 import 'features/auth/data/secure_auth_store.dart';
 import 'features/notes/data/smartnote_database.dart';
 import 'features/notes/data/sqlite_note_repository.dart';
+import 'features/notes/data/sqlite_note_draft_repository.dart';
 import 'features/notes/domain/note.dart';
 import 'features/sync/data/api_config.dart';
 import 'features/sync/data/logging_http_client.dart';
 import 'features/sync/data/outbox_sync_service.dart';
 import 'features/sync/data/rest_cloud_note_store.dart';
+import 'features/sync/data/resume_sync_coordinator.dart';
 import 'features/settings/data/app_settings_repository.dart';
 import 'features/security/data/pin_lock_service.dart';
 import 'features/reminders/data/local_notification_scheduler.dart';
@@ -37,8 +40,8 @@ Future<void> main() async {
   final config = ApiConfig.fromEnvironment();
   if (config == null) {
     developer.log(
-      'API_BASE_URL is not configured; running local-only.',
-      name: 'smartnote.api',
+      'No remote API configured; using the on-device SQLite database.',
+      name: 'smartnote.storage',
     );
   }
 
@@ -72,25 +75,52 @@ class _SmartNoteHost extends StatefulWidget {
   State<_SmartNoteHost> createState() => _SmartNoteHostState();
 }
 
-class _SmartNoteHostState extends State<_SmartNoteHost> {
+class _SmartNoteHostState extends State<_SmartNoteHost>
+    with WidgetsBindingObserver {
   final store = SecureAuthStore();
   final client = LoggingHttpClient(http.Client());
   AuthController? auth;
+  Database? localAuthDatabase;
   _Runtime? runtime;
   Object? loadError;
+  late final ResumeSyncCoordinator resumeSync;
+  int syncRevision = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    resumeSync = ResumeSyncCoordinator(_syncCurrentSession);
     _initialize();
+  }
+
+  Future<void> _syncCurrentSession() async {
+    final session = auth?.session;
+    final target = runtime;
+    if (session == null || target == null || widget.config == null) return;
+    await _sync(target, session);
+    if (mounted) setState(() => syncRevision++);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      resumeSync.sync().catchError((Object error) {
+        developer.log('Resume sync failed: $error', name: 'smartnote.sync');
+      });
+    }
   }
 
   Future<void> _initialize() async {
     try {
       final session = await store.read();
-      final api = widget.config == null
-          ? null
-          : AuthApiClient(client, baseUrl: widget.config!.baseUrl);
+      final AuthGateway api;
+      if (widget.config == null) {
+        localAuthDatabase = await openLocalAuthDatabase();
+        api = LocalAuthGateway(localAuthDatabase!);
+      } else {
+        api = AuthApiClient(client, baseUrl: widget.config!.baseUrl);
+      }
       final initialRuntime = await _createRuntime(session);
       if (session != null && widget.config != null) {
         await _sync(initialRuntime, session);
@@ -128,7 +158,9 @@ class _SmartNoteHostState extends State<_SmartNoteHost> {
       if (widget.config != null) await _sync(oldRuntime, next);
       return;
     }
-    if (previous?.kind == AuthKind.guest && next.kind == AuthKind.user) {
+    if (widget.config != null &&
+        previous?.kind == AuthKind.guest &&
+        next.kind == AuthKind.user) {
       await auth!.api!.claimGuest(next.accessToken, previous!.accessToken);
     }
     final newRuntime = await _createRuntime(next);
@@ -141,7 +173,9 @@ class _SmartNoteHostState extends State<_SmartNoteHost> {
         'Không thể tải cache của tài khoản. Dữ liệu Guest vẫn được giữ nguyên.',
       );
     }
-    if (previous?.kind == AuthKind.guest && next.kind == AuthKind.user) {
+    if (widget.config != null &&
+        previous?.kind == AuthKind.guest &&
+        next.kind == AuthKind.user) {
       await clearSmartNoteProfile(oldRuntime.database);
     }
     if (!mounted) return;
@@ -180,16 +214,18 @@ class _SmartNoteHostState extends State<_SmartNoteHost> {
         ),
       );
     }
-    if (runtime == null || auth == null) {
+    if (runtime == null) {
       return const MaterialApp(
         home: Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
     return SmartNoteApp(
       key: ValueKey(
-        '${auth!.session?.profileId ?? 'signed-out'}-${runtime.hashCode}',
+        '${auth?.session?.profileId ?? 'local'}-'
+        '${runtime.hashCode}-$syncRevision',
       ),
       repository: runtime!.repository,
+      draftRepository: SqliteNoteDraftRepository(runtime!.database),
       settingsStore: widget.settingsStore,
       authController: auth,
       pinLockService: PinLockService(widget.preferences),
@@ -200,7 +236,9 @@ class _SmartNoteHostState extends State<_SmartNoteHost> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     client.close();
+    localAuthDatabase?.close();
     runtime?.database.close();
     super.dispose();
   }

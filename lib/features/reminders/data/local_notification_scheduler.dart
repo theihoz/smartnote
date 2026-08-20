@@ -16,6 +16,14 @@ abstract interface class ReminderScheduler {
   Future<void> cancel(String noteId);
 }
 
+class ReminderPermissionDenied implements Exception {
+  const ReminderPermissionDenied();
+}
+
+void ensureNotificationPermission(bool? granted) {
+  if (granted == false) throw const ReminderPermissionDenied();
+}
+
 class LocalNotificationScheduler implements ReminderScheduler {
   LocalNotificationScheduler([FlutterLocalNotificationsPlugin? plugin])
     : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
@@ -39,11 +47,12 @@ class LocalNotificationScheduler implements ReminderScheduler {
     required String title,
     required String body,
   }) async {
-    await _plugin
+    final granted = await _plugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.requestNotificationsPermission();
+    ensureNotificationPermission(granted);
     await _plugin.cancel(id: notificationId(reminder.noteId));
     if (!reminder.enabled) return;
 

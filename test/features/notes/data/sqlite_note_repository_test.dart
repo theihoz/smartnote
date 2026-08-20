@@ -191,6 +191,23 @@ void main() {
     expect(versions.last['snapshot'], contains('Bản đã sửa'));
   });
 
+  test('returns version history newest first', () async {
+    final note = _note(title: 'Bản đầu', body: 'Nội dung đầu');
+    await repository.save(note);
+    await repository.save(
+      note.copyWith(
+        title: 'Bản mới',
+        body: 'Nội dung mới',
+        updatedAt: DateTime(2026, 7, 31, 10),
+      ),
+    );
+
+    final versions = await repository.listVersions(note.id);
+
+    expect(versions.map((version) => version.title), ['Bản mới', 'Bản đầu']);
+    expect(versions.first.body, 'Nội dung mới');
+  });
+
   test('lists, restores and purges notes from the 30-day trash', () async {
     final note = _note();
     await repository.save(note);

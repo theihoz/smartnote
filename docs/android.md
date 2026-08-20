@@ -3,9 +3,25 @@
 ```powershell
 flutter clean
 flutter pub get
-flutter build apk --debug --dart-define=API_BASE_URL=http://192.168.1.10:8787
+flutter build apk --debug
+flutter build apk --release
+```
+
+APK mặc định lưu tài khoản, Guest và ghi chú trong SQLite trên điện thoại,
+không yêu cầu Docker hoặc Wi-Fi. Chỉ thêm
+`--dart-define=API_BASE_URL=http://<IP-LAN>:8787` khi cần đồng bộ với máy chủ.
+
+### Build APK kết nối Docker
+
+```powershell
+npm run docker:up
+ipconfig
 flutter build apk --release --dart-define=API_BASE_URL=http://192.168.1.10:8787
 ```
+
+Thay IP ví dụ bằng IPv4 LAN của máy tính. Trước khi cài APK, mở
+`http://<IP-LAN>:8787/health` trên trình duyệt điện thoại để xác nhận kết nối.
+Nếu đổi Wi-Fi hoặc IP máy tính thay đổi, cần build lại APK.
 
 APK nằm tại:
 

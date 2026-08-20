@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/notes/domain/note_repository.dart';
+import '../features/notes/domain/note_draft_repository.dart';
 import '../features/notes/presentation/home_screen.dart';
 import '../features/notes/presentation/library_screens.dart';
 import '../features/notes/presentation/note_detail_screen.dart';
@@ -28,6 +29,7 @@ class SmartNoteApp extends StatelessWidget {
     super.key,
     required this.repository,
     this.settingsStore,
+    this.draftRepository,
     this.syncOnStartup,
     this.pinLockService,
     this.reminderRepository,
@@ -37,6 +39,7 @@ class SmartNoteApp extends StatelessWidget {
 
   final NoteRepository repository;
   final AppSettingsStore? settingsStore;
+  final NoteDraftRepository? draftRepository;
   final Future<Object?> Function()? syncOnStartup;
   final PinLockService? pinLockService;
   final ReminderRepository? reminderRepository;
@@ -50,12 +53,15 @@ class SmartNoteApp extends StatelessWidget {
         noteRepositoryProvider.overrideWithValue(repository),
         if (settingsStore != null)
           appSettingsStoreProvider.overrideWithValue(settingsStore!),
+        if (draftRepository != null)
+          noteDraftRepositoryProvider.overrideWithValue(draftRepository),
         if (pinLockService != null)
           pinLockServiceProvider.overrideWithValue(pinLockService),
         if (reminderRepository != null)
           reminderRepositoryProvider.overrideWithValue(reminderRepository),
         if (reminderScheduler != null)
           reminderSchedulerProvider.overrideWithValue(reminderScheduler),
+        authEnabledProvider.overrideWithValue(authController != null),
       ],
       child: _SmartNoteRouterApp(
         syncOnStartup: syncOnStartup,

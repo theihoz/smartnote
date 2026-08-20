@@ -103,6 +103,15 @@ class _NoteDetailScreenState extends ConsumerState<NoteDetailScreen> {
             icon: const Icon(Icons.share_outlined),
           ),
           IconButton(
+            tooltip: featureText(
+              context,
+              vi: 'Lịch sử phiên bản',
+              en: 'Version history',
+            ),
+            onPressed: () => _showVersionHistory(context, ref, current),
+            icon: const Icon(Icons.history_rounded),
+          ),
+          IconButton(
             tooltip: l10n.delete,
             onPressed: () => _delete(context, ref, current),
             icon: const Icon(Icons.delete_outline_rounded),
@@ -199,6 +208,104 @@ class _NoteDetailScreenState extends ConsumerState<NoteDetailScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showVersionHistory(
+    BuildContext context,
+    WidgetRef ref,
+    Note current,
+  ) async {
+    final repository = ref.read(noteVersionRepositoryProvider);
+    final versions = await repository?.listVersions(current.id) ?? const [];
+    if (!context.mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                featureText(
+                  sheetContext,
+                  vi: 'Lịch sử phiên bản',
+                  en: 'Version history',
+                ),
+                style: Theme.of(sheetContext).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 12),
+              if (versions.isEmpty)
+                Text(
+                  featureText(
+                    sheetContext,
+                    vi: 'Chưa có phiên bản trước đó.',
+                    en: 'No previous versions yet.',
+                  ),
+                )
+              else
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: versions.length,
+                    itemBuilder: (context, index) {
+                      final version = versions[index];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          version.title.isEmpty
+                              ? featureText(
+                                  context,
+                                  vi: 'Ghi chú không tiêu đề',
+                                  en: 'Untitled note',
+                                )
+                              : version.title,
+                        ),
+                        subtitle: Text(
+                          '${version.createdAt.toLocal()}\n${version.body}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: TextButton(
+                          onPressed: () async {
+                            await ref
+                                .read(notesControllerProvider.notifier)
+                                .restore(
+                                  current.copyWith(
+                                    title: version.title,
+                                    body: version.body,
+                                    kind: version.kind,
+                                    checklist: version.checklist,
+                                    tags: version.tags,
+                                    isFavorite: version.isFavorite,
+                                    colorKey: version.colorKey,
+                                    imagePaths: version.imagePaths,
+                                    updatedAt: DateTime.now(),
+                                  ),
+                                );
+                            if (sheetContext.mounted) {
+                              Navigator.pop(sheetContext);
+                            }
+                          },
+                          child: Text(
+                            featureText(
+                              context,
+                              vi: 'Khôi phục',
+                              en: 'Restore',
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

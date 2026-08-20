@@ -2,6 +2,10 @@
 
 OpenAPI nằm tại `postman/specs/smartnote-api.openapi.yaml`.
 
+REST API chỉ được ứng dụng sử dụng khi APK được build với
+`--dart-define=API_BASE_URL=http://<host>:8787`. Nếu không truyền cấu hình này,
+đăng ký, đăng nhập, Guest và ghi chú dùng SQLite local, không gửi HTTP.
+
 | Method | Path | Mô tả |
 |---|---|---|
 | GET | `/health` | Trạng thái API |

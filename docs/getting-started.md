@@ -26,12 +26,24 @@ Database runtime nằm trong `api/data/` .
 
 ```powershell
 flutter pub get
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8787
+flutter run
 ```
 
-Thiết bị thật cần cùng mạng với máy API và dùng IP LAN của máy. Cho phép cổng
-API qua firewall nếu thiết bị không kết nối được. Bản cài mới cần kết nối API
-để tạo Guest hoặc tài khoản; sau đó ghi chú vẫn dùng được offline từ cache.
+Lệnh trên chạy đăng ký, đăng nhập, Guest và ghi chú hoàn toàn bằng SQLite.
+Muốn thử máy chủ, truyền thêm `--dart-define=API_BASE_URL=<địa chỉ API>`; thiết
+bị thật phải dùng IP LAN của máy chạy Docker và cùng mạng Wi-Fi.
+
+### Chọn nguồn dữ liệu
+
+| Cách chạy | Lệnh | Nơi lưu tài khoản và ghi chú |
+|---|---|---|
+| APK offline mặc định | `flutter run` | SQLite trên thiết bị |
+| Emulator + Docker | `flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8787` | Express/SQLite trong Docker, có cache thiết bị |
+| Điện thoại thật + Docker | `flutter run --dart-define=API_BASE_URL=http://<IP-LAN>:8787` | Express/SQLite trong Docker, có cache thiết bị |
+
+`API_BASE_URL` là cấu hình tại thời điểm build, không phải ô nhập trong ứng
+dụng. Dùng `ipconfig` để tìm IPv4 LAN của máy tính. Không dùng `localhost`,
+`127.0.0.1` hoặc `10.0.2.2` trên điện thoại thật.
 
 Flutter tạo một file SQLite riêng cho từng profile. Backend tự tạo
 `smartnote-api.db`, bật WAL và busy timeout. Không sửa database bằng tay khi

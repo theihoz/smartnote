@@ -240,12 +240,30 @@ class _ReminderSheetState extends State<ReminderSheet> {
       timezone: _scheduledAt.timeZoneName,
       repeatType: _repeat,
     );
-    await widget.repository!.save(reminder);
-    await widget.scheduler?.schedule(
-      reminder: reminder,
-      title: widget.note.title,
-      body: widget.note.body,
-    );
+    try {
+      await widget.repository!.save(reminder);
+      await widget.scheduler?.schedule(
+        reminder: reminder,
+        title: widget.note.title,
+        body: widget.note.body,
+      );
+    } on ReminderPermissionDenied {
+      await widget.repository!.delete(widget.note.id);
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            featureText(
+              context,
+              vi: 'Thông báo đang bị tắt. Hãy cấp quyền trong Cài đặt thiết bị.',
+              en: 'Notifications are off. Enable them in device Settings.',
+            ),
+          ),
+        ),
+      );
+      return;
+    }
     if (mounted) Navigator.pop(context, true);
   }
 

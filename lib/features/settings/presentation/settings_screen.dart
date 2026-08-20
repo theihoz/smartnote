@@ -41,12 +41,19 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.account_circle_rounded,
             iconColor: theme.colorScheme.primary,
             children: [
-              ListTile(
-                leading: const Icon(Icons.person_outline_rounded),
-                title: Text(featureText(context, vi: 'Tài khoản & đăng nhập', en: 'Account & sign in')),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push('/auth'),
-              ),
+              if (ref.watch(authEnabledProvider))
+                ListTile(
+                  leading: const Icon(Icons.person_outline_rounded),
+                  title: Text(
+                    featureText(
+                      context,
+                      vi: 'Tài khoản & đăng nhập',
+                      en: 'Account & sign in',
+                    ),
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push('/auth'),
+                ),
             ],
           ),
           const SizedBox(height: 18),
