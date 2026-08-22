@@ -39,6 +39,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       return;
     }
     await service.setPin(_pin.text);
+    if (!mounted) return;
     _pin.clear();
     _confirm.clear();
     setState(() {

@@ -31,17 +31,21 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Manage your workspace preferences, security, and data.',
+            featureText(
+              context,
+              vi: 'Quản lý tùy chọn, bảo mật và dữ liệu của bạn.',
+              en: 'Manage your workspace preferences, security, and data.',
+            ),
             style: TextStyle(color: theme.colorScheme.outline),
           ),
           const SizedBox(height: 24),
 
-          _BentoCard(
-            title: 'Account',
-            icon: Icons.account_circle_rounded,
-            iconColor: theme.colorScheme.primary,
-            children: [
-              if (ref.watch(authEnabledProvider))
+          if (ref.watch(authEnabledProvider)) ...[
+            _BentoCard(
+              title: featureText(context, vi: 'Tài khoản', en: 'Account'),
+              icon: Icons.account_circle_rounded,
+              iconColor: theme.colorScheme.primary,
+              children: [
                 ListTile(
                   leading: const Icon(Icons.person_outline_rounded),
                   title: Text(
@@ -54,13 +58,14 @@ class SettingsScreen extends ConsumerWidget {
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => context.push('/auth'),
                 ),
-            ],
-          ),
-          const SizedBox(height: 18),
+              ],
+            ),
+            const SizedBox(height: 18),
+          ],
 
           // Security Bento Card
           _BentoCard(
-            title: 'Security',
+            title: featureText(context, vi: 'Bảo mật', en: 'Security'),
             icon: Icons.shield_rounded,
             iconColor: theme.colorScheme.primary,
             children: [
@@ -97,7 +102,7 @@ class SettingsScreen extends ConsumerWidget {
 
           // Appearance Bento Card
           _BentoCard(
-            title: 'Appearance',
+            title: featureText(context, vi: 'Giao diện', en: 'Appearance'),
             icon: Icons.palette_rounded,
             iconColor: theme.colorScheme.secondary,
             children: [
@@ -121,8 +126,16 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 subtitle: Text(
                   themeMode == ThemeMode.dark
-                      ? 'Currently Dark'
-                      : 'Currently Light',
+                      ? featureText(
+                          context,
+                          vi: 'Đang dùng nền tối',
+                          en: 'Currently Dark',
+                        )
+                      : featureText(
+                          context,
+                          vi: 'Đang dùng nền sáng',
+                          en: 'Currently Light',
+                        ),
                 ),
                 trailing: Switch(
                   value: themeMode == ThemeMode.dark,
@@ -173,7 +186,11 @@ class SettingsScreen extends ConsumerWidget {
 
           // Data Management Bento Card
           _BentoCard(
-            title: 'Data Management',
+            title: featureText(
+              context,
+              vi: 'Quản lý dữ liệu',
+              en: 'Data Management',
+            ),
             icon: Icons.storage_rounded,
             iconColor: theme.colorScheme.primary,
             children: [

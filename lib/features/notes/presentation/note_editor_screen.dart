@@ -11,6 +11,7 @@ import '../../../app/app_keys.dart';
 import '../../../app/app_theme.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../l10n/feature_text.dart';
 import '../domain/note.dart';
 import '../domain/note_validator.dart';
 import '../domain/note_draft_repository.dart';
@@ -198,7 +199,11 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${_images.length} hình ảnh đính kèm',
+                                featureText(
+                                  context,
+                                  vi: '${_images.length} hình ảnh đính kèm',
+                                  en: '${_images.length} images attached',
+                                ),
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -216,7 +221,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                         ),
                       ActionChip(
                         avatar: const Icon(Icons.add_rounded, size: 16),
-                        label: const Text('Thêm thẻ'),
+                        label: Text(
+                          featureText(context, vi: 'Thêm thẻ', en: 'Add label'),
+                        ),
                         onPressed: _showAddTagDialog,
                       ),
                     ],
@@ -357,12 +364,16 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                     color: AppTheme.indigo,
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    l10n.savedOnDevice,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.indigo,
+                  Flexible(
+                    child: Text(
+                      l10n.savedOnDevice,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.indigo,
+                      ),
                     ),
                   ),
                 ],
@@ -379,18 +390,24 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Thêm thẻ ghi chú'),
+        title: Text(
+          featureText(context, vi: 'Thêm thẻ ghi chú', en: 'Add a label'),
+        ),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Tên thẻ (vd: Study, Projects)',
+          decoration: InputDecoration(
+            hintText: featureText(
+              context,
+              vi: 'Tên thẻ (vd: Study, Projects)',
+              en: 'Label name (e.g. Study, Projects)',
+            ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
+            child: Text(featureText(context, vi: 'Hủy', en: 'Cancel')),
           ),
           FilledButton(
             onPressed: () {
@@ -400,11 +417,11 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
               }
               Navigator.pop(context);
             },
-            child: const Text('Thêm'),
+            child: Text(featureText(context, vi: 'Thêm', en: 'Add')),
           ),
         ],
       ),
-    );
+    ).then((_) => controller.dispose());
   }
 
   Future<void> _pick(ImageSource source) async {
@@ -412,7 +429,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
       source: source,
       imageQuality: 85,
     );
-    if (image != null) setState(() => _images.add(image.path));
+    if (image != null && mounted) setState(() => _images.add(image.path));
   }
 
   Future<void> _save() async {
@@ -493,6 +510,7 @@ class _ChecklistEditor extends StatelessWidget {
       children: [
         for (var index = 0; index < items.length; index++)
           Padding(
+            key: ValueKey(items[index].id),
             padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [

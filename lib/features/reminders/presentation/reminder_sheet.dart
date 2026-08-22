@@ -154,36 +154,42 @@ class _ReminderSheetState extends State<ReminderSheet> {
                   Row(
                     children: [
                       if (_existing != null)
-                        TextButton.icon(
-                          onPressed: _saving ? null : _remove,
-                          icon: const Icon(Icons.notifications_off_outlined),
-                          label: Text(
-                            featureText(
-                              context,
-                              vi: 'Xóa nhắc việc',
-                              en: 'Remove reminder',
+                        Flexible(
+                          child: TextButton.icon(
+                            onPressed: _saving ? null : _remove,
+                            icon: const Icon(Icons.notifications_off_outlined),
+                            label: Text(
+                              featureText(
+                                context,
+                                vi: 'Xóa nhắc việc',
+                                en: 'Remove reminder',
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
                       const Spacer(),
-                      FilledButton.icon(
-                        key: const Key('save-reminder-button'),
-                        onPressed: _saving || widget.repository == null
-                            ? null
-                            : _save,
-                        icon: const Icon(Icons.notifications_active_outlined),
-                        label: Text(
-                          _saving
-                              ? featureText(
-                                  context,
-                                  vi: 'Đang lưu…',
-                                  en: 'Saving…',
-                                )
-                              : featureText(
-                                  context,
-                                  vi: 'Lưu nhắc việc',
-                                  en: 'Save reminder',
-                                ),
+                      Flexible(
+                        child: FilledButton.icon(
+                          key: const Key('save-reminder-button'),
+                          onPressed: _saving || widget.repository == null
+                              ? null
+                              : _save,
+                          icon: const Icon(Icons.notifications_active_outlined),
+                          label: Text(
+                            _saving
+                                ? featureText(
+                                    context,
+                                    vi: 'Đang lưu…',
+                                    en: 'Saving…',
+                                  )
+                                : featureText(
+                                    context,
+                                    vi: 'Lưu nhắc việc',
+                                    en: 'Save reminder',
+                                  ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
                     ],
@@ -206,7 +212,7 @@ class _ReminderSheetState extends State<ReminderSheet> {
       context: context,
       initialTime: TimeOfDay.fromDateTime(_scheduledAt),
     );
-    if (time == null) return;
+    if (time == null || !mounted) return;
     setState(() {
       _scheduledAt = DateTime(
         date.year,

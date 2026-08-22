@@ -135,10 +135,14 @@ class HomeScreen extends ConsumerWidget {
                   sliver: SliverToBoxAdapter(
                     child: Row(
                       children: [
-                        Text(
-                          l10n.recentNotes,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                        Flexible(
+                          child: Text(
+                            l10n.recentNotes,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
                         ),
                         const SizedBox(width: 8),
                         if (taskCount > 0)
@@ -431,7 +435,9 @@ class _InspirationCard extends ConsumerWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
             const SizedBox(width: 12),
-            Text(AppLocalizations.of(context).inspirationLoading),
+            Expanded(
+              child: Text(AppLocalizations.of(context).inspirationLoading),
+            ),
           ],
         ),
         error: (_, _) => Row(

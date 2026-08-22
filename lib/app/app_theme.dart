@@ -78,7 +78,7 @@ abstract final class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
-        indicatorColor: scheme.primaryContainer,
+        indicatorColor: scheme.secondaryContainer,
         labelTextStyle: const WidgetStatePropertyAll(
           TextStyle(
             fontFamily: 'Outfit',

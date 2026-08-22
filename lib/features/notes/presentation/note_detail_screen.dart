@@ -448,6 +448,7 @@ class _NoteDetailScreenState extends ConsumerState<NoteDetailScreen> {
       await ref
           .read(notesControllerProvider.notifier)
           .setLocked(note.id, false);
+      if (!mounted) return;
       setState(() => _sessionUnlocked = true);
     }
   }

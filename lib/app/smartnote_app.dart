@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../l10n/feature_text.dart';
 import '../features/notes/domain/note_repository.dart';
 import '../features/notes/domain/note_draft_repository.dart';
 import '../features/notes/presentation/home_screen.dart';
@@ -106,8 +107,16 @@ class _SmartNoteRouterAppState extends ConsumerState<_SmartNoteRouterApp> {
       GoRoute(
         path: '/auth',
         builder: (context, state) => widget.authController == null
-            ? const Scaffold(
-                body: Center(child: Text('Authentication is unavailable.')),
+            ? Scaffold(
+                body: Center(
+                  child: Text(
+                    featureText(
+                      context,
+                      vi: 'Xác thực không khả dụng.',
+                      en: 'Authentication is unavailable.',
+                    ),
+                  ),
+                ),
               )
             : AuthScreen(controller: widget.authController!),
       ),

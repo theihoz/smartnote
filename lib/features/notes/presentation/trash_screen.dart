@@ -25,6 +25,7 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
   Future<void> _restore(String id) async {
     await ref.read(trashNoteRepositoryProvider)?.restoreFromTrash(id);
     await ref.read(notesControllerProvider.notifier).load();
+    if (!mounted) return;
     setState(() => _notes = _load());
   }
 

@@ -33,7 +33,11 @@ class SearchScreen extends ConsumerWidget {
               autofocus: false,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search_rounded),
-                hintText: 'Search notes',
+                hintText: featureText(
+                  context,
+                  vi: 'Tìm ghi chú',
+                  en: 'Search notes',
+                ),
                 suffixIcon: IconButton(
                   key: const Key('search-filter-button'),
                   onPressed: () => _showFilters(context, ref),
@@ -90,132 +94,134 @@ class SearchScreen extends ConsumerWidget {
         builder: (context, setModalState) => SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  featureText(
-                    context,
-                    vi: 'Bộ lọc ghi chú',
-                    en: 'Note filters',
-                  ),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: favoritesOnly,
-                  title: Text(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
                     featureText(
                       context,
-                      vi: 'Chỉ ghi chú yêu thích',
-                      en: 'Favorites only',
+                      vi: 'Bộ lọc ghi chú',
+                      en: 'Note filters',
                     ),
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  onChanged: (value) =>
-                      setModalState(() => favoritesOnly = value ?? false),
-                ),
-                DropdownButtonFormField<String?>(
-                  initialValue: tag,
-                  decoration: InputDecoration(
-                    labelText: featureText(context, vi: 'Nhãn', en: 'Tag'),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: favoritesOnly,
+                    title: Text(
+                      featureText(
+                        context,
+                        vi: 'Chỉ ghi chú yêu thích',
+                        en: 'Favorites only',
+                      ),
+                    ),
+                    onChanged: (value) =>
+                        setModalState(() => favoritesOnly = value ?? false),
                   ),
-                  items: [
-                    DropdownMenuItem<String?>(
-                      value: null,
-                      child: Text(
-                        featureText(context, vi: 'Tất cả', en: 'All'),
-                      ),
+                  DropdownButtonFormField<String?>(
+                    initialValue: tag,
+                    decoration: InputDecoration(
+                      labelText: featureText(context, vi: 'Nhãn', en: 'Tag'),
                     ),
-                    ...tags.map(
-                      (value) => DropdownMenuItem<String?>(
-                        value: value,
-                        child: Text(value),
-                      ),
-                    ),
-                  ],
-                  onChanged: (value) => setModalState(() => tag = value),
-                ),
-                const SizedBox(height: 12),
-                SegmentedButton<NoteKind?>(
-                  segments: [
-                    ButtonSegment(
-                      value: null,
-                      label: Text(
-                        featureText(context, vi: 'Tất cả', en: 'All'),
-                      ),
-                    ),
-                    ButtonSegment(
-                      value: NoteKind.text,
-                      label: Text(
-                        featureText(context, vi: 'Văn bản', en: 'Text'),
-                      ),
-                    ),
-                    ButtonSegment(
-                      value: NoteKind.checklist,
-                      label: Text(
-                        featureText(context, vi: 'Công việc', en: 'Tasks'),
-                      ),
-                    ),
-                  ],
-                  selected: {kind},
-                  onSelectionChanged: (value) =>
-                      setModalState(() => kind = value.single),
-                ),
-                const SizedBox(height: 12),
-                RadioGroup<NoteSort>(
-                  groupValue: sort,
-                  onChanged: (value) => setModalState(() => sort = value!),
-                  child: Column(
-                    children: [
-                      RadioListTile(
-                        value: NoteSort.newest,
-                        title: Text(
-                          featureText(context, vi: 'Mới nhất', en: 'Newest'),
+                    items: [
+                      DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text(
+                          featureText(context, vi: 'Tất cả', en: 'All'),
                         ),
                       ),
-                      RadioListTile(
-                        value: NoteSort.oldest,
-                        title: Text(
-                          featureText(context, vi: 'Cũ nhất', en: 'Oldest'),
-                        ),
-                      ),
-                      RadioListTile(
-                        value: NoteSort.title,
-                        title: Text(
-                          featureText(
-                            context,
-                            vi: 'Theo tiêu đề',
-                            en: 'By title',
-                          ),
+                      ...tags.map(
+                        (value) => DropdownMenuItem<String?>(
+                          value: value,
+                          child: Text(value),
                         ),
                       ),
                     ],
+                    onChanged: (value) => setModalState(() => tag = value),
                   ),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () {
-                      ref
-                          .read(notesControllerProvider.notifier)
-                          .setQuery(
-                            NoteQuery(
-                              searchText: state.query.searchText,
-                              tag: tag,
-                              favoritesOnly: favoritesOnly,
-                              kind: kind,
-                              sort: sort,
+                  const SizedBox(height: 12),
+                  SegmentedButton<NoteKind?>(
+                    segments: [
+                      ButtonSegment(
+                        value: null,
+                        label: Text(
+                          featureText(context, vi: 'Tất cả', en: 'All'),
+                        ),
+                      ),
+                      ButtonSegment(
+                        value: NoteKind.text,
+                        label: Text(
+                          featureText(context, vi: 'Văn bản', en: 'Text'),
+                        ),
+                      ),
+                      ButtonSegment(
+                        value: NoteKind.checklist,
+                        label: Text(
+                          featureText(context, vi: 'Công việc', en: 'Tasks'),
+                        ),
+                      ),
+                    ],
+                    selected: {kind},
+                    onSelectionChanged: (value) =>
+                        setModalState(() => kind = value.single),
+                  ),
+                  const SizedBox(height: 12),
+                  RadioGroup<NoteSort>(
+                    groupValue: sort,
+                    onChanged: (value) => setModalState(() => sort = value!),
+                    child: Column(
+                      children: [
+                        RadioListTile(
+                          value: NoteSort.newest,
+                          title: Text(
+                            featureText(context, vi: 'Mới nhất', en: 'Newest'),
+                          ),
+                        ),
+                        RadioListTile(
+                          value: NoteSort.oldest,
+                          title: Text(
+                            featureText(context, vi: 'Cũ nhất', en: 'Oldest'),
+                          ),
+                        ),
+                        RadioListTile(
+                          value: NoteSort.title,
+                          title: Text(
+                            featureText(
+                              context,
+                              vi: 'Theo tiêu đề',
+                              en: 'By title',
                             ),
-                          );
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      featureText(context, vi: 'Áp dụng', en: 'Apply'),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () {
+                        ref
+                            .read(notesControllerProvider.notifier)
+                            .setQuery(
+                              NoteQuery(
+                                searchText: state.query.searchText,
+                                tag: tag,
+                                favoritesOnly: favoritesOnly,
+                                kind: kind,
+                                sort: sort,
+                              ),
+                            );
+                        Navigator.pop(context);
+                      },
+                      child: Text(
+                        featureText(context, vi: 'Áp dụng', en: 'Apply'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

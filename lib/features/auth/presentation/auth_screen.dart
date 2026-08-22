@@ -354,32 +354,34 @@ class _AccountView extends StatelessWidget {
         title: Text(
           featureText(context, vi: 'Đổi mật khẩu', en: 'Change password'),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: current,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: featureText(
-                  context,
-                  vi: 'Mật khẩu hiện tại',
-                  en: 'Current password',
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: current,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: featureText(
+                    context,
+                    vi: 'Mật khẩu hiện tại',
+                    en: 'Current password',
+                  ),
                 ),
               ),
-            ),
-            TextField(
-              controller: next,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: featureText(
-                  context,
-                  vi: 'Mật khẩu mới',
-                  en: 'New password',
+              TextField(
+                controller: next,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: featureText(
+                    context,
+                    vi: 'Mật khẩu mới',
+                    en: 'New password',
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
