@@ -68,3 +68,6 @@ devtools_options.yaml
 *.keystore
 *.p12
 *.pem
+
+# graphify knowledge-graph output (regenerable via /graphify)
+/graphify-out/
